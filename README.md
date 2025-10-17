@@ -1,21 +1,10 @@
-# Medici - Bitcoin Banking Platform
+# Medici - Bitcoin Banking App
 
 Professional Bitcoin wealth management powered by Venice Fi. Borrow against your Bitcoin, earn yield on stablecoins, and swap across chains.
 
 ![Medici App](./public/MEDICI.png)
 
-## 📁 Repository Structure
-
-This repository contains two main projects:
-
-- **`/` (root)** - Medici App (React/Vite app)
-- **`/landing`** - Medici Landing Page (marketing site)
-
-### Medici App
-The main application for Bitcoin banking, deployed at `app.medicibtc.com` or `cozy-yeot-1f174d.netlify.app`
-
-### Medici Landing
-Marketing landing page, deployed at `medicibtc.com` or `venicelanding.netlify.app`
+**Live App**: [cozy-yeot-1f174d.netlify.app](https://cozy-yeot-1f174d.netlify.app) | **Landing Page**: [github.com/Venicefi/medici-landing](https://github.com/Venicefi/medici-landing)
 
 ## 🎨 Design
 
@@ -47,8 +36,6 @@ Account management, network info, contacts, and preferences
 
 ## 🚀 Quick Start
 
-### Medici App
-
 ```bash
 # Install dependencies
 npm install
@@ -56,25 +43,6 @@ npm install
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your configuration
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Deploy to Netlify
-netlify deploy --prod --dir=dist
-```
-
-### Medici Landing Page
-
-```bash
-# Navigate to landing directory
-cd landing
-
-# Install dependencies
-npm install
 
 # Run development server
 npm run dev
