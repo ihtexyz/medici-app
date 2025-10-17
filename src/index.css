@@ -1,0 +1,337 @@
+/* Import design system */
+@import './styles/design-system.css';
+@import './styles/coinbase-design.css';
+
+/* https://piccalil.li/blog/a-modern-css-reset */
+
+/* Box sizing rules */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margin */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
+}
+
+/* Set core root defaults */
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+/* Set core body defaults */
+body {
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+  background: #0B0B0F;
+  color: #E6E6EB;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Simple Coinbase-like layout primitives */
+.container {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #00DAFF 0%, #8A6CFF 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.05) inset;
+}
+
+.brand-copy {
+  display: grid;
+}
+
+.brand-title {
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+}
+
+.nav {
+  display: flex;
+  gap: 16px;
+}
+
+.nav a {
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: #00DAFF;
+}
+
+main {
+  padding-top: 32px;
+}
+
+.hero {
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: #15151C;
+}
+
+.hero-lede {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 6px;
+}
+
+.hero-title {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.hero-sub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+}
+
+.kpi-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: #111116;
+  padding: 14px;
+}
+
+.card-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+}
+
+.card-value {
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+.actions {
+  margin-top: 24px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.action-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: #111116;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.action-title {
+  font-size: 14px;
+}
+
+.badge {
+  font-size: 10px;
+  color: #0B0B0F;
+  background: #00DAFF;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.action-body {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+
+.action-cta {
+  margin-top: auto;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0B0B0F;
+  color: white;
+  font-size: 12px;
+}
+
+.button[disabled] {
+  opacity: 0.5;
+}
+
+.button--link {
+  background: transparent;
+  border-color: rgba(0,218,255,0.5);
+  color: #00DAFF;
+}
+
+.debug {
+  margin-top: 24px;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.debug-item {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: #111116;
+  padding: 12px;
+}
+
+.debug-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+}
+
+.debug-value {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+/* Shell layout */
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { border-right: 1px solid rgba(255,255,255,0.08); padding: 16px; display: flex; flex-direction: column; }
+.sidebar-header { padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; }
+.sidebar-nav { display: grid; gap: 6px; }
+.sidebar-link { padding: 8px 10px; border-radius: 8px; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
+.sidebar-link:hover { background: rgba(255,255,255,0.06); }
+.sidebar-link--active { background: rgba(0,218,255,0.08); color: #00DAFF; }
+.sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+.sidebar-doc { color: #00DAFF; text-decoration: none; font-size: 12px; }
+.main { display: grid; grid-template-rows: 56px 1fr; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.content { padding: 24px; }
+
+/* Borrow two-column */
+.two-col { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; }
+.panel { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: #111116; padding: 16px; }
+.slider { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(255,255,255,0.18); border-radius: 999px; outline: none; }
+.metric { font-size: 12px; color: rgba(255,255,255,0.65); }
+.metric-strong { font-size: 24px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .topbar { position: sticky; top: 0; backdrop-filter: blur(6px); background: rgba(11,11,15,0.6); }
+  .content { padding: 16px 12px 80px; }
+  .two-col { grid-template-columns: 1fr; }
+  .mobile-nav { display: block !important; margin: 8px 16px; }
+  .hero-title { font-size: 22px; }
+  .hero-sub { font-size: 13px; }
+  .panel { padding: 14px; }
+  .button { height: 36px; }
+}
+
+@media (max-width: 600px) {
+  .hero-title { font-size: 20px; }
+  .hero-sub { font-size: 12px; }
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .action-grid { grid-template-columns: 1fr; }
+}
+
+/* A elements that don't have a class get default styles */
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+
+/* Make images easier to work with */
+img,
+picture {
+  max-width: 100%;
+  display: block;
+}
+
+/* Inherit fonts for inputs and buttons */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Remove all animations, transitions and smooth scroll for people that prefer not to see them */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

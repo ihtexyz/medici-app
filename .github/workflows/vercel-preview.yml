@@ -1,0 +1,52 @@
+name: Vercel Preview
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./dapp
+
+      - name: Build
+        run: pnpm build
+        working-directory: ./dapp
+        env:
+          VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
+          VITE_CENT_ADDRESS: ${{ secrets.VITE_CENT_ADDRESS }}
+          VITE_CENT_REWARD_ADDRESS: ${{ secrets.VITE_CENT_REWARD_ADDRESS }}
+          VITE_MARKET_ID: btc-aggregated
+          VITE_SWAPKIT_API_KEY: preview
+          VITE_SWAPKIT_PROJECT_ID: preview
+          VITE_APP_NAME: Origami
+          VITE_WALLETCONNECT_PROJECT_ID: preview
+
+      - name: Deploy to Vercel Preview
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./dapp
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+
