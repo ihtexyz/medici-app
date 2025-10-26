@@ -185,6 +185,28 @@ export async function closeTrove(
   return tx.wait();
 }
 
+export async function adjustInterestRate(
+  provider: BrowserProvider,
+  collateralSymbol: string,
+  troveId: bigint,
+  newAnnualInterestRate: bigint,
+  maxUpfrontFee: bigint,
+) {
+  const branch = getBranchBySymbol(collateralSymbol);
+  if (!branch) throw new Error("Unknown collateral");
+  const signer = await provider.getSigner();
+  const bo = new Contract(branch.borrowerOperations, BorrowerOperationsAbi, signer);
+  const { upperHint, lowerHint } = await getHints(provider, collateralSymbol, newAnnualInterestRate);
+  const tx = await bo.adjustTroveInterestRate(
+    troveId,
+    newAnnualInterestRate,
+    upperHint,
+    lowerHint,
+    maxUpfrontFee,
+  );
+  return tx.wait();
+}
+
 export async function spDeposit(
   provider: BrowserProvider,
   collateralSymbol: string,

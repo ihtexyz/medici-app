@@ -3,9 +3,10 @@ import { Link } from "react-router-dom"
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 
 import { useToast } from "../context/ToastContext"
-import { openTrove, addCollateral, withdrawCollateral, repayCent, withdrawCent, closeTrove, faucetTap } from "../services/cent"
+import { openTrove, addCollateral, withdrawCollateral, repayCent, withdrawCent, closeTrove, faucetTap, adjustInterestRate } from "../services/cent"
 import { getBranches } from "../config/cent"
 import { useTrove } from "../hooks/useTrove"
+import { usePrice } from "../hooks/usePrice"
 
 /**
  * Borrow Page - Coinbase Buy Style
@@ -20,7 +21,7 @@ export default function Borrow() {
   const { address, isConnected } = useAppKitAccount()
   const { showToast } = useToast()
 
-  const [step, setStep] = useState<'select' | 'amount' | 'preview'>('select')
+  const [step, setStep] = useState<'select' | 'amount' | 'preview' | 'manage'>('select')
   const [selectedCollateral, setSelectedCollateral] = useState<string>('WBTC18')
   const [centAmount, setCentAmount] = useState('')
   const [collAmount, setCollAmount] = useState('')
@@ -29,12 +30,32 @@ export default function Borrow() {
   const [manageStatus, setManageStatus] = useState<string | null>(null)
   const [manageCollAmount, setManageCollAmount] = useState("")
   const [manageCentAmount, setManageCentAmount] = useState("")
+  const [newInterestRate, setNewInterestRate] = useState('5')
 
   const { data: trove } = useTrove(selectedCollateral, address || undefined, 0n)
+  const { price } = usePrice(selectedCollateral)
   const hasTrove = useMemo(() => !!trove && (trove.entireDebt > 0n || trove.entireColl > 0n), [trove])
+
+  // Calculate collateral ratio (CR = collateral value / debt)
+  const collateralRatio = useMemo(() => {
+    if (!trove || !price || trove.entireDebt === 0n) return null
+    const collValue = Number(trove.entireColl) / 1e18 * parseFloat(price)
+    const debt = Number(trove.entireDebt) / 1e18
+    return (collValue / debt) * 100
+  }, [trove, price])
+
+  // Calculate liquidation price
+  const liquidationPrice = useMemo(() => {
+    if (!trove || trove.entireColl === 0n) return null
+    const debt = Number(trove.entireDebt) / 1e18
+    const coll = Number(trove.entireColl) / 1e18
+    return (debt * 1.2) / coll // MCR = 120%
+  }, [trove])
 
   const handleSelectCollateral = (symbol: string) => {
     setSelectedCollateral(symbol)
+    // If user has a Trove for this collateral, go to manage mode
+    // Otherwise go to amount entry
     setStep('amount')
   }
 
@@ -132,19 +153,49 @@ export default function Borrow() {
         {/* Collateral List from CENT branches */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cb-space-sm)' }}>
           {(getBranches() || []).map((b) => (
-            <div key={b.collSymbol} className="token-item" onClick={() => handleSelectCollateral(b.collSymbol)}>
-              <div className="token-icon" style={{ background: 'linear-gradient(135deg, #FF9500 0%, #FFCC00 100%)' }}>₿</div>
-              <div className="token-info">
-                <div className="token-name">{b.collSymbol}</div>
-                <div className="token-symbol">BTC wrapper</div>
+            <div key={b.collSymbol} style={{ display: 'flex', gap: 8 }}>
+              <div className="token-item" style={{ flex: 1 }} onClick={() => handleSelectCollateral(b.collSymbol)}>
+                <div className="token-icon" style={{ background: 'linear-gradient(135deg, #FF9500 0%, #FFCC00 100%)' }}>₿</div>
+                <div className="token-info">
+                  <div className="token-name">{b.collSymbol}</div>
+                  <div className="token-symbol">BTC wrapper</div>
+                </div>
+                <div className="token-balance">
+                  <div className="token-amount">—</div>
+                  <div className="token-value">Open</div>
+                </div>
               </div>
-              <div className="token-balance">
-                <div className="token-amount">—</div>
-                <div className="token-value">Select</div>
-              </div>
+              {hasTrove && selectedCollateral === b.collSymbol && (
+                <button
+                  className="cb-btn cb-btn-secondary"
+                  onClick={() => {
+                    setSelectedCollateral(b.collSymbol)
+                    setStep('manage')
+                  }}
+                  style={{ minWidth: 100 }}
+                >
+                  Manage
+                </button>
+              )}
             </div>
           ))}
         </div>
+
+        {/* Quick Manage Link if user has a Trove */}
+        {hasTrove && (
+          <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginTop: 'var(--cb-space-lg)' }}>
+            <h3 className="cb-subtitle" style={{ marginBottom: 8 }}>Active Position</h3>
+            <p className="cb-caption" style={{ marginBottom: 12 }}>
+              You have an active position with {selectedCollateral}
+            </p>
+            <button
+              className="cb-btn cb-btn-primary"
+              onClick={() => setStep('manage')}
+            >
+              Manage {selectedCollateral} Position
+            </button>
+          </div>
+        )}
 
         <div style={{ marginTop: 'var(--cb-space-xl)' }}>
           <Link
@@ -269,9 +320,307 @@ export default function Borrow() {
     )
   }
 
+  // Step 3.5: Manage Existing Position
+  if (step === 'manage' && hasTrove && trove) {
+    return (
+      <div style={{
+        padding: 'var(--cb-space-lg)',
+        maxWidth: '480px',
+        margin: '0 auto',
+      }}>
+        {/* Back Button */}
+        <button
+          onClick={() => setStep('select')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--cb-text-secondary)',
+            fontSize: '16px',
+            cursor: 'pointer',
+            marginBottom: 'var(--cb-space-lg)',
+            padding: 0,
+          }}
+        >
+          ← Back
+        </button>
+
+        <div style={{ marginBottom: 'var(--cb-space-xl)', textAlign: 'center' }}>
+          <h1 className="cb-title">Manage Position</h1>
+          <p className="cb-caption" style={{ marginTop: 'var(--cb-space-xs)' }}>
+            {selectedCollateral} Trove
+          </p>
+        </div>
+
+        {/* Position Stats */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 12 }}>Position Overview</h3>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="cb-caption">Collateral</div>
+            <div className="cb-body cb-mono">{(Number(trove.entireColl) / 1e18).toFixed(6)} {selectedCollateral}</div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="cb-caption">Debt</div>
+            <div className="cb-body cb-mono">{(Number(trove.entireDebt) / 1e18).toFixed(2)} CENT</div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="cb-caption">Interest Rate</div>
+            <div className="cb-body cb-mono">{(Number(trove.annualInterestRate) / 1e16).toFixed(2)}%</div>
+          </div>
+
+          {price && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div className="cb-caption">Collateral Price</div>
+              <div className="cb-body cb-mono">${price}</div>
+            </div>
+          )}
+
+          {collateralRatio && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div className="cb-caption">Collateral Ratio</div>
+                <div className="cb-body cb-mono" style={{ color: collateralRatio < 150 ? 'var(--cb-error)' : 'var(--cb-success)' }}>
+                  {collateralRatio.toFixed(2)}%
+                </div>
+              </div>
+              {collateralRatio < 150 && collateralRatio >= 120 && (
+                <div style={{
+                  background: 'rgba(255, 149, 0, 0.1)',
+                  border: '1px solid rgba(255, 149, 0, 0.3)',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 12,
+                }}>
+                  <div className="cb-caption" style={{ color: '#FF9500' }}>⚠️ Warning: Your position is at risk. CR should be above 150%.</div>
+                </div>
+              )}
+              {collateralRatio < 120 && (
+                <div style={{
+                  background: 'rgba(255, 69, 58, 0.1)',
+                  border: '1px solid rgba(255, 69, 58, 0.3)',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 12,
+                }}>
+                  <div className="cb-caption" style={{ color: '#FF453A' }}>🚨 Critical: Risk of liquidation! Add collateral or repay debt immediately.</div>
+                </div>
+              )}
+            </>
+          )}
+
+          {liquidationPrice && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+              <div className="cb-caption">Liquidation Price</div>
+              <div className="cb-body cb-mono" style={{ color: 'var(--cb-text-secondary)' }}>
+                ${liquidationPrice.toFixed(2)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Collateral Management */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 12 }}>Collateral</h3>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="number"
+              value={manageCollAmount}
+              onChange={(e) => setManageCollAmount(e.target.value)}
+              placeholder="Amount (18 decimals)"
+              style={{ flex: 1 }}
+              className="cb-input"
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="cb-btn cb-btn-secondary"
+              style={{ flex: 1 }}
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCollAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await addCollateral(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('✅ Collateral added')
+                  setManageCollAmount('')
+                } catch (e) {
+                  setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Add collateral failed'))
+                }
+              }}
+            >
+              Add Collateral
+            </button>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              style={{ flex: 1 }}
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCollAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await withdrawCollateral(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('✅ Collateral withdrawn')
+                  setManageCollAmount('')
+                } catch (e) {
+                  setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Withdraw collateral failed'))
+                }
+              }}
+            >
+              Withdraw
+            </button>
+          </div>
+        </div>
+
+        {/* Debt Management */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 12 }}>CENT Debt</h3>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="number"
+              value={manageCentAmount}
+              onChange={(e) => setManageCentAmount(e.target.value)}
+              placeholder="Amount"
+              style={{ flex: 1 }}
+              className="cb-input"
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="cb-btn cb-btn-secondary"
+              style={{ flex: 1 }}
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCentAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await withdrawCent(provider as any, selectedCollateral, 0n, amt, BigInt(Math.round(0.02 * 1e18)))
+                  setManageStatus('✅ CENT borrowed')
+                  setManageCentAmount('')
+                } catch (e) {
+                  setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Borrow more failed'))
+                }
+              }}
+            >
+              Borrow More
+            </button>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              style={{ flex: 1 }}
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCentAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await repayCent(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('✅ CENT repaid')
+                  setManageCentAmount('')
+                } catch (e) {
+                  setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Repay failed'))
+                }
+              }}
+            >
+              Repay
+            </button>
+          </div>
+        </div>
+
+        {/* Interest Rate Adjustment */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 12 }}>Adjust Interest Rate</h3>
+          <p className="cb-caption" style={{ marginBottom: 12 }}>
+            Current: {(Number(trove.annualInterestRate) / 1e16).toFixed(2)}% APR
+          </p>
+          <input
+            type="range"
+            min="0.5"
+            max="25"
+            step="0.1"
+            value={newInterestRate}
+            onChange={(e) => setNewInterestRate(e.target.value)}
+            style={{ width: '100%', marginBottom: 8 }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="cb-caption">New Rate: {newInterestRate}% APR</div>
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)' }}>
+              {parseFloat(newInterestRate) < Number(trove.annualInterestRate) / 1e16 ? '↓ Lower redemption risk' : '↑ Higher redemption risk'}
+            </div>
+          </div>
+          <button
+            className="cb-btn cb-btn-secondary"
+            onClick={async () => {
+              try {
+                setManageStatus(null)
+                const { ethers } = await import('ethers')
+                const provider = new ethers.BrowserProvider((window as any).ethereum)
+                const rate = BigInt(Math.round((parseFloat(newInterestRate) / 100) * 1e18))
+                await adjustInterestRate(provider as any, selectedCollateral, 0n, rate, BigInt(Math.round(0.02 * 1e18)))
+                setManageStatus('✅ Interest rate updated')
+              } catch (e) {
+                setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Rate adjustment failed'))
+              }
+            }}
+          >
+            Update Interest Rate
+          </button>
+        </div>
+
+        {/* Close Position */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 8, color: 'var(--cb-error)' }}>Close Position</h3>
+          <p className="cb-caption" style={{ marginBottom: 12 }}>
+            This will repay all debt and return your collateral. This action cannot be undone.
+          </p>
+          <button
+            className="cb-btn"
+            style={{
+              background: 'rgba(255, 69, 58, 0.1)',
+              color: 'var(--cb-error)',
+              border: '1px solid rgba(255, 69, 58, 0.3)',
+            }}
+            onClick={async () => {
+              if (!window.confirm('Are you sure you want to close this position? This will repay all debt and return your collateral.')) return
+              try {
+                setManageStatus(null)
+                const { ethers } = await import('ethers')
+                const provider = new ethers.BrowserProvider((window as any).ethereum)
+                await closeTrove(provider as any, selectedCollateral, 0n)
+                setManageStatus('✅ Position closed')
+                setTimeout(() => setStep('select'), 2000)
+              } catch (e) {
+                setManageStatus('❌ ' + (e instanceof Error ? e.message : 'Close failed'))
+              }
+            }}
+          >
+            Close Position
+          </button>
+        </div>
+
+        {manageStatus && (
+          <div className="cb-card" style={{
+            padding: 'var(--cb-space-md)',
+            textAlign: 'center',
+            background: manageStatus.includes('✅') ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 69, 58, 0.1)',
+          }}>
+            <div className="cb-body">{manageStatus}</div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Step 3: Preview
   return (
-    <div style={{ 
+    <div style={{
       padding: 'var(--cb-space-lg)',
       maxWidth: '480px',
       margin: '0 auto',
