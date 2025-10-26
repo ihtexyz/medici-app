@@ -110,26 +110,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Bottom Tab Navigation (Coinbase Style) */}
+      {/* Bottom Tab Navigation (USDaf Style) */}
       <nav className="bottom-nav">
         <NavLink
           to="/"
           className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="bottom-nav-icon">🏠</span>
-          <span>Home</span>
+          <span>Dashboard</span>
         </NavLink>
 
         <NavLink
-          to="/portfolio"
+          to="/borrow"
           className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         >
-          <span className="bottom-nav-icon">💼</span>
-          <span>Portfolio</span>
+          <span className="bottom-nav-icon">💳</span>
+          <span>Borrow</span>
         </NavLink>
 
         <NavLink
-          to="/invest"
+          to="/earn"
           className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="bottom-nav-icon">📈</span>
@@ -137,11 +137,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </NavLink>
 
         <NavLink
-          to="/swap"
+          to="/rewards"
           className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         >
-          <span className="bottom-nav-icon">🔄</span>
-          <span>Convert</span>
+          <span className="bottom-nav-icon">🎁</span>
+          <span>Rewards</span>
         </NavLink>
 
         <NavLink

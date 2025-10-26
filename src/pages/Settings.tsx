@@ -68,10 +68,10 @@ export default function Settings() {
       {/* Header */}
       <div style={{ marginBottom: 'var(--cb-space-xl)' }}>
         <h1 className="cb-title" style={{ marginBottom: 'var(--cb-space-xs)' }}>
-          Settings
+          More
         </h1>
         <p className="cb-caption">
-          Manage your account and preferences
+          Additional features and account settings
         </p>
       </div>
 
@@ -128,10 +128,10 @@ export default function Settings() {
           <span style={{ color: 'var(--cb-text-tertiary)' }}>→</span>
         </Link>
 
-        <Link 
-          to="/rewards" 
+        <Link
+          to="/swap"
           className="cb-card"
-          style={{ 
+          style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -141,32 +141,10 @@ export default function Settings() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cb-space-md)' }}>
-            <span style={{ fontSize: '24px' }}>🎁</span>
+            <span style={{ fontSize: '24px' }}>🔄</span>
             <div>
-              <div className="cb-body" style={{ fontWeight: 600 }}>Rewards</div>
-              <div className="cb-caption">Claim CENT tokens</div>
-            </div>
-          </div>
-          <span style={{ color: 'var(--cb-text-tertiary)' }}>→</span>
-        </Link>
-
-        <Link 
-          to="/contacts" 
-          className="cb-card"
-          style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            textDecoration: 'none',
-            padding: 'var(--cb-space-md) var(--cb-space-lg)',
-            cursor: 'pointer',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cb-space-md)' }}>
-            <span style={{ fontSize: '24px' }}>👥</span>
-            <div>
-              <div className="cb-body" style={{ fontWeight: 600 }}>Contacts</div>
-              <div className="cb-caption">Manage saved addresses</div>
+              <div className="cb-body" style={{ fontWeight: 600 }}>Swap</div>
+              <div className="cb-caption">Exchange tokens</div>
             </div>
           </div>
           <span style={{ color: 'var(--cb-text-tertiary)' }}>→</span>

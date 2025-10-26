@@ -3,18 +3,14 @@ import { lazy, Suspense } from "react"
 import { WagmiProvider, QueryClientProvider, queryClient, wagmiConfig } from "./config/reown"
 
 import Layout from "./components/Layout"
-const Borrow = lazy(() => import("./pages/Borrow"))
-const Buy = lazy(() => import("./pages/Buy"))
-const Explore = lazy(() => import("./pages/Explore"))
-const Invest = lazy(() => import("./pages/Invest"))
-const Market = lazy(() => import("./pages/Market"))
 const Overview = lazy(() => import("./pages/Overview"))
-const Pay = lazy(() => import("./pages/Pay"))
-const Portfolio = lazy(() => import("./pages/Portfolio"))
+const Borrow = lazy(() => import("./pages/Borrow"))
+const Earn = lazy(() => import("./pages/Earn"))
 const Rewards = lazy(() => import("./pages/Rewards"))
-const Swap = lazy(() => import("./pages/Swap"))
-const Contacts = lazy(() => import("./pages/Contacts"))
 const Settings = lazy(() => import("./pages/Settings"))
+const Portfolio = lazy(() => import("./pages/Portfolio"))
+const Swap = lazy(() => import("./pages/Swap"))
+const Bank = lazy(() => import("./pages/Bank"))
 import { SwapKitProvider } from "./state/swapkit"
 import { ContactsProvider } from "./context/ContactsContext"
 import { ToastProvider } from "./context/ToastContext"
@@ -57,17 +53,13 @@ function App() {
                     }>
                       <Routes>
                         <Route path="/" element={<Overview />} />
-                        <Route path="/portfolio" element={<Portfolio />} />
-                        <Route path="/buy" element={<Buy />} />
                         <Route path="/borrow" element={<Borrow />} />
-                        <Route path="/invest" element={<Invest />} />
-                        <Route path="/market" element={<Market />} />
-                        <Route path="/explore" element={<Explore />} />
+                        <Route path="/earn" element={<Earn />} />
                         <Route path="/rewards" element={<Rewards />} />
-                        <Route path="/swap" element={<Swap />} />
-                        <Route path="/pay" element={<Pay />} />
-                        <Route path="/contacts" element={<Contacts />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/portfolio" element={<Portfolio />} />
+                        <Route path="/swap" element={<Swap />} />
+                        <Route path="/bank" element={<Bank />} />
                       </Routes>
                     </Suspense>
                   </Layout>

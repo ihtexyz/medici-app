@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 import { ethers } from "ethers"
 
 import { getEnvOptional as getEnv } from "../lib/runtime-env"
 import { useMarketData } from "../hooks/useMarketData"
 import useCentBalance from "../hooks/useCentBalance"
+import { useTransactionHistory } from "../hooks/useTransactionHistory"
+import TransactionHistory from "../components/TransactionHistory"
 
 /**
  * Portfolio Page - Coinbase Assets Style
@@ -25,6 +28,8 @@ export default function Portfolio() {
   const [usdcBalance, setUsdcBalance] = useState<string>("0")
   const [loading, setLoading] = useState(true)
 
+  const { transactions, loading: loadingHistory, getRecentTransactions } = useTransactionHistory(address)
+
   // Fetch user balances
   useEffect(() => {
     async function fetchBalances() {
@@ -33,17 +38,45 @@ export default function Portfolio() {
       try {
         const provider = new ethers.JsonRpcProvider(rpcUrl)
 
-        // Mock balances for now (replace with real contract calls)
-        // const btcContract = new ethers.Contract(WBTC_ADDRESS, ERC20_ABI, provider)
-        // const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, provider)
-        // const btcBal = await btcContract.balanceOf(address)
-        // const usdcBal = await usdcContract.balanceOf(address)
+        // ERC20 ABI for balanceOf
+        const ERC20_ABI = [
+          "function balanceOf(address owner) view returns (uint256)"
+        ]
 
-        // Mock data
-        setBtcBalance("0.05")
-        setUsdcBalance("1500.00")
+        // Get CENT addresses from config
+        const { getBranches } = await import("../config/cent")
+        const branches = getBranches()
+
+        // Fetch balances from collateral tokens (WBTC, cbBTC)
+        const balances = await Promise.all(
+          branches.map(async (branch) => {
+            try {
+              const contract = new ethers.Contract(branch.collToken, ERC20_ABI, provider)
+              const balance = await contract.balanceOf(address)
+              return {
+                symbol: branch.collSymbol,
+                balance: balance,
+                decimals: 18 // BTC wrappers use 18 decimals
+              }
+            } catch (error) {
+              console.error(`Error fetching ${branch.collSymbol} balance:`, error)
+              return { symbol: branch.collSymbol, balance: 0n, decimals: 18 }
+            }
+          })
+        )
+
+        // Sum up all BTC wrapper balances (WBTC + cbBTC)
+        const totalBtc = balances.reduce((sum, b) => sum + b.balance, 0n)
+        setBtcBalance((Number(totalBtc) / 1e18).toFixed(6))
+
+        // For USDC, we'd need the USDC contract address
+        // For now, keeping as placeholder since we don't have USDC in config
+        setUsdcBalance("0.00")
       } catch (error) {
         console.error("Error fetching balances:", error)
+        // Fallback to 0 on error
+        setBtcBalance("0.00")
+        setUsdcBalance("0.00")
       } finally {
         setLoading(false)
       }
@@ -275,45 +308,26 @@ export default function Portfolio() {
           Recent activity
         </h2>
 
-        {/* Empty State */}
-        <div className="cb-card" style={{ 
-          textAlign: 'center',
-          padding: 'var(--cb-space-xl)',
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: 'var(--cb-space-md)' }}>
-            📋
-          </div>
-          <div className="cb-body" style={{ 
-            color: 'var(--cb-text-secondary)',
-            marginBottom: 'var(--cb-space-sm)',
-          }}>
-            No recent activity
-          </div>
-          <div className="cb-caption">
-            Your transactions will appear here
-          </div>
-        </div>
+        <TransactionHistory
+          transactions={getRecentTransactions(10)}
+          loading={loadingHistory}
+          emptyMessage="No recent activity"
+        />
       </div>
 
       {/* Quick Actions */}
-      <div style={{ 
+      <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 'var(--cb-space-md)',
         marginTop: 'var(--cb-space-xl)',
       }}>
-        <button
-          className="cb-btn cb-btn-secondary"
-          onClick={() => window.location.href = '/borrow'}
-        >
-          Buy More
-        </button>
-        <button
-          className="cb-btn cb-btn-tertiary"
-          onClick={() => window.location.href = '/swap'}
-        >
+        <Link to="/borrow" className="cb-btn cb-btn-secondary" style={{ textDecoration: 'none', textAlign: 'center' }}>
+          Borrow
+        </Link>
+        <Link to="/swap" className="cb-btn cb-btn-tertiary" style={{ textDecoration: 'none', textAlign: 'center' }}>
           Convert
-        </button>
+        </Link>
       </div>
     </div>
   )

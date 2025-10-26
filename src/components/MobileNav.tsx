@@ -6,12 +6,14 @@ type NavItem = {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: "/", label: "Overview" },
+  { path: "/", label: "Dashboard" },
   { path: "/borrow", label: "Borrow" },
-  { path: "/explore", label: "Earn" },
-  { path: "/swap", label: "Swap" },
-  { path: "/pay", label: "Pay" },
+  { path: "/earn", label: "Earn" },
   { path: "/rewards", label: "Rewards" },
+  { path: "/bank", label: "Bank" },
+  { path: "/swap", label: "Swap" },
+  { path: "/portfolio", label: "Portfolio" },
+  { path: "/settings", label: "Settings" },
 ]
 
 export default function MobileNav() {

@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 
 import { useToast } from "../context/ToastContext"
-import { submitBorrowIntent } from "../services/execution"
+import { openTrove, addCollateral, withdrawCollateral, repayCent, withdrawCent, closeTrove, faucetTap } from "../services/cent"
+import { getBranches } from "../config/cent"
+import { useTrove } from "../hooks/useTrove"
 
 /**
  * Borrow Page - Coinbase Buy Style
@@ -19,17 +21,25 @@ export default function Borrow() {
   const { showToast } = useToast()
 
   const [step, setStep] = useState<'select' | 'amount' | 'preview'>('select')
-  const [selectedAsset, setSelectedAsset] = useState<'CENT' | 'BTC'>('CENT')
-  const [amount, setAmount] = useState('')
+  const [selectedCollateral, setSelectedCollateral] = useState<string>('WBTC18')
+  const [centAmount, setCentAmount] = useState('')
+  const [collAmount, setCollAmount] = useState('')
+  const [interestRate, setInterestRate] = useState('5')
   const [loading, setLoading] = useState(false)
+  const [manageStatus, setManageStatus] = useState<string | null>(null)
+  const [manageCollAmount, setManageCollAmount] = useState("")
+  const [manageCentAmount, setManageCentAmount] = useState("")
 
-  const handleSelectAsset = (asset: 'CENT' | 'BTC') => {
-    setSelectedAsset(asset)
+  const { data: trove } = useTrove(selectedCollateral, address || undefined, 0n)
+  const hasTrove = useMemo(() => !!trove && (trove.entireDebt > 0n || trove.entireColl > 0n), [trove])
+
+  const handleSelectCollateral = (symbol: string) => {
+    setSelectedCollateral(symbol)
     setStep('amount')
   }
 
   const handlePreview = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!centAmount || parseFloat(centAmount) <= 0 || !collAmount || parseFloat(collAmount) <= 0) {
       showToast('Please enter a valid amount', 'error')
       return
     }
@@ -46,21 +56,24 @@ export default function Borrow() {
     try {
       const { ethers } = await import('ethers')
       const provider = new ethers.BrowserProvider((window as any).ethereum)
-      
-      const amountUSD = parseFloat(amount)
-      const collateralBTC = (amountUSD * 1.5) / 67500 // 150% collateral at $67,500/BTC
-      const intent = {
-        amountUSD: amountUSD,
-        aprBps: 1200, // 12% APR
-        durationSeconds: 365 * 24 * 60 * 60, // 1 year
-        collateralAsset: 'BTC',
-        collateralAmount: BigInt(Math.floor(collateralBTC * 1e8)), // BTC has 8 decimals
-      }
-      
-      await submitBorrowIntent(provider, intent)
-      showToast('Borrow request submitted successfully!', 'success')
+
+      const cent = BigInt(Math.round(parseFloat(centAmount) * 1e18))
+      const coll = BigInt(Math.round(parseFloat(collAmount) * 1e18))
+      const rate = BigInt(Math.round((parseFloat(interestRate) / 100) * 1e18))
+
+      await openTrove(provider as any, {
+        collateralSymbol: selectedCollateral,
+        owner: address,
+        ownerIndex: 0n,
+        collAmount: coll,
+        centAmount: cent,
+        annualInterestRate: rate,
+        maxUpfrontFee: BigInt(Math.round(0.02 * 1e18)),
+      })
+      showToast('Borrow successful!', 'success')
       setStep('select')
-      setAmount('')
+      setCentAmount('')
+      setCollAmount('')
     } catch (error) {
       console.error('Borrow error:', error)
       showToast('Failed to submit borrow request', 'error')
@@ -72,18 +85,20 @@ export default function Borrow() {
   // Not connected
   if (!address) {
     return (
-      <div style={{ 
-        padding: 'var(--cb-space-lg)',
+      <div style={{
+        paddingLeft: 'var(--cb-space-lg)',
+        paddingRight: 'var(--cb-space-lg)',
+        paddingTop: 'var(--cb-space-2xl)',
+        paddingBottom: 'var(--cb-space-lg)',
         maxWidth: '480px',
         margin: '0 auto',
         textAlign: 'center',
-        paddingTop: 'var(--cb-space-2xl)',
       }}>
         <div style={{ fontSize: '64px', marginBottom: 'var(--cb-space-lg)' }}>🔒</div>
         <h2 className="cb-title" style={{ marginBottom: 'var(--cb-space-md)' }}>
           Connect your wallet
         </h2>
-        <p className="cb-body" style={{ 
+        <p className="cb-body" style={{
           color: 'var(--cb-text-secondary)',
           marginBottom: 'var(--cb-space-xl)',
         }}>
@@ -99,7 +114,7 @@ export default function Borrow() {
     )
   }
 
-  // Step 1: Select Asset
+  // Step 1: Select Collateral
   if (step === 'select') {
     return (
       <div style={{ 
@@ -108,67 +123,86 @@ export default function Borrow() {
         margin: '0 auto',
       }}>
         <div style={{ marginBottom: 'var(--cb-space-xl)' }}>
-          <h1 className="cb-title">Select asset to borrow</h1>
+          <h1 className="cb-title">Select collateral</h1>
           <p className="cb-caption" style={{ marginTop: 'var(--cb-space-xs)' }}>
-            Borrow using Bitcoin as collateral
+            Choose a BTC wrapper to collateralize your CENT loan
           </p>
         </div>
 
-        {/* Asset List */}
+        {/* Collateral List from CENT branches */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cb-space-sm)' }}>
-          <div 
-            className="token-item"
-            onClick={() => handleSelectAsset('CENT')}
-          >
-            <div className="token-icon" style={{ 
-              background: 'linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%)',
-            }}>
-              $
+          {(getBranches() || []).map((b) => (
+            <div key={b.collSymbol} className="token-item" onClick={() => handleSelectCollateral(b.collSymbol)}>
+              <div className="token-icon" style={{ background: 'linear-gradient(135deg, #FF9500 0%, #FFCC00 100%)' }}>₿</div>
+              <div className="token-info">
+                <div className="token-name">{b.collSymbol}</div>
+                <div className="token-symbol">BTC wrapper</div>
+              </div>
+              <div className="token-balance">
+                <div className="token-amount">—</div>
+                <div className="token-value">Select</div>
+              </div>
             </div>
-            <div className="token-info">
-              <div className="token-name">CENT</div>
-              <div className="token-symbol">Stablecoin</div>
-            </div>
-            <div className="token-balance">
-              <div className="token-amount">$1.00</div>
-              <div className="token-value">1:1 USD</div>
-            </div>
-          </div>
-
-          <div 
-            className="token-item"
-            onClick={() => handleSelectAsset('BTC')}
-          >
-            <div className="token-icon" style={{ 
-              background: 'linear-gradient(135deg, #FF9500 0%, #FFCC00 100%)',
-            }}>
-              ₿
-            </div>
-            <div className="token-info">
-              <div className="token-name">Bitcoin</div>
-              <div className="token-symbol">BTC</div>
-            </div>
-            <div className="token-balance">
-              <div className="token-amount">$67,500</div>
-              <div className="token-value text-success">+2.5%</div>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div style={{ marginTop: 'var(--cb-space-xl)' }}>
-          <Link 
-            to="/invest" 
+          <Link
+            to="/earn"
             className="cb-btn cb-btn-tertiary"
             style={{ textDecoration: 'none' }}
           >
             Or earn interest instead
           </Link>
         </div>
+
+        {/* Testnet Faucet */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginTop: 'var(--cb-space-lg)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 8 }}>Testnet Faucet</h3>
+          <p className="cb-caption" style={{ marginBottom: 12 }}>
+            Get testnet tokens for testing. Click to receive 1 {selectedCollateral} and 1000 CENT.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  await faucetTap(provider as any, selectedCollateral)
+                  setManageStatus(`Received 1 ${selectedCollateral}`)
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Faucet failed')
+                }
+              }}
+            >
+              Get {selectedCollateral}
+            </button>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  await faucetTap(provider as any, 'CENT')
+                  setManageStatus('Received 1000 CENT')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'CENT faucet failed')
+                }
+              }}
+            >
+              Get CENT
+            </button>
+          </div>
+          {manageStatus && <div className="cb-caption" style={{ marginTop: 8 }}>{manageStatus}</div>}
+        </div>
       </div>
     )
   }
 
-  // Step 2: Enter Amount
+  // Step 2: Enter Amounts
   if (step === 'amount') {
     return (
       <div style={{ 
@@ -193,55 +227,41 @@ export default function Borrow() {
         </button>
 
         <div style={{ marginBottom: 'var(--cb-space-xl)', textAlign: 'center' }}>
-          <h1 className="cb-title">Borrow {selectedAsset}</h1>
-          <p className="cb-caption" style={{ marginTop: 'var(--cb-space-xs)' }}>
-            How much would you like to borrow?
-          </p>
+          <h1 className="cb-title">Borrow CENT</h1>
+          <p className="cb-caption" style={{ marginTop: 'var(--cb-space-xs)' }}>Enter collateral and CENT amounts</p>
         </div>
 
-        {/* Amount Input */}
+        {/* Collateral Amount */}
         <div style={{ 
           textAlign: 'center',
           marginBottom: 'var(--cb-space-2xl)',
         }}>
           <div style={{ marginBottom: 'var(--cb-space-md)' }}>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="amount-input-large"
-              autoFocus
-            />
+            <input type="number" value={collAmount} onChange={(e) => setCollAmount(e.target.value)} placeholder="Collateral (18d)" className="amount-input-large" autoFocus />
           </div>
-          <div className="cb-caption">
-            Collateral: Bitcoin • 150% ratio required
-          </div>
+          <div className="cb-caption">Collateral: {selectedCollateral}</div>
         </div>
 
-        {/* Quick Amount Buttons */}
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 'var(--cb-space-sm)',
-          marginBottom: 'var(--cb-space-xl)',
-        }}>
-          {['100', '500', '1000'].map((val) => (
-            <button
-              key={val}
-              className="cb-btn cb-btn-tertiary"
-              onClick={() => setAmount(val)}
-            >
-              ${val}
-            </button>
-          ))}
+        {/* CENT Amount */}
+        <div style={{ textAlign: 'center', marginBottom: 'var(--cb-space-2xl)' }}>
+          <div style={{ marginBottom: 'var(--cb-space-md)' }}>
+            <input type="number" value={centAmount} onChange={(e) => setCentAmount(e.target.value)} placeholder="CENT to mint" className="amount-input-large" />
+          </div>
+          <div className="cb-caption">Stablecoin to borrow</div>
+        </div>
+
+        {/* Interest Rate */}
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-lg)' }}>
+          <div className="cb-body" style={{ marginBottom: 8, fontWeight: 600 }}>Interest rate</div>
+          <input type="range" min="0.5" max="25" step="0.1" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} />
+          <div className="cb-caption" style={{ marginTop: 8 }}>{interestRate}% APR</div>
         </div>
 
         {/* Preview Button */}
         <button
           className="cb-btn cb-btn-primary"
           onClick={handlePreview}
-          disabled={!amount || parseFloat(amount) <= 0}
+          disabled={!centAmount || parseFloat(centAmount) <= 0 || !collAmount || parseFloat(collAmount) <= 0}
         >
           Preview borrow
         </button>
@@ -277,85 +297,22 @@ export default function Borrow() {
       </div>
 
       {/* Amount Display */}
-      <div style={{ 
-        textAlign: 'center',
-        marginBottom: 'var(--cb-space-xl)',
-      }}>
-        <div className="balance-medium" style={{ color: 'var(--cb-orange)' }}>
-          ${amount}
+      <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-xl)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="cb-caption">Collateral</div>
+          <div className="cb-body">{selectedCollateral}</div>
         </div>
-        <div className="cb-caption">
-          {parseFloat(amount).toFixed(4)} {selectedAsset}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="cb-caption">Collateral Amount</div>
+          <div className="cb-body cb-mono">{collAmount}</div>
         </div>
-      </div>
-
-      {/* Order Details */}
-      <div className="cb-card" style={{ marginBottom: 'var(--cb-space-xl)' }}>
-        <div style={{ marginBottom: 'var(--cb-space-md)' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            marginBottom: 'var(--cb-space-sm)',
-          }}>
-            <span className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-              To
-            </span>
-            <span className="cb-body-sm cb-mono">
-              {address.slice(0, 10)}...{address.slice(-8)}
-            </span>
-          </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            marginBottom: 'var(--cb-space-sm)',
-          }}>
-            <span className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-              Network
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cb-space-xs)' }}>
-              <span className="cb-body-sm">Bitcoin</span>
-              <span style={{ fontSize: '18px' }}>₿</span>
-            </div>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="cb-caption">CENT to Mint</div>
+          <div className="cb-body cb-mono">{centAmount || '0'}</div>
         </div>
-
-        <div className="cb-divider"></div>
-
-        <div style={{ marginTop: 'var(--cb-space-md)' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            marginBottom: 'var(--cb-space-sm)',
-          }}>
-            <span className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-              Borrow APR
-            </span>
-            <span className="cb-body-sm" style={{ fontWeight: 600 }}>12.00%</span>
-          </div>
-
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            marginBottom: 'var(--cb-space-sm)',
-          }}>
-            <span className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-              Collateral required
-            </span>
-            <span className="cb-body-sm" style={{ fontWeight: 600 }}>
-              {(parseFloat(amount) * 1.5 / 67500).toFixed(6)} BTC
-            </span>
-          </div>
-
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-          }}>
-            <span className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-              Loan term
-            </span>
-            <span className="cb-body-sm" style={{ fontWeight: 600 }}>365 days</span>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="cb-caption">Interest Rate</div>
+          <div className="cb-body cb-mono">{interestRate}%</div>
         </div>
       </div>
 
@@ -372,8 +329,117 @@ export default function Borrow() {
         textAlign: 'center',
         marginTop: 'var(--cb-space-md)',
       }}>
-        By confirming, you agree to the loan terms. Your BTC will be locked as collateral until repayment.
+        By confirming, your BTC wrapper is locked as collateral until repayment.
       </p>
+
+      {hasTrove && (
+        <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginTop: 'var(--cb-space-xl)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 8 }}>Manage Position</h3>
+          <div className="cb-caption" style={{ marginBottom: 6 }}>Collateral ({selectedCollateral})</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="number"
+              value={manageCollAmount}
+              onChange={(e) => setManageCollAmount(e.target.value)}
+              placeholder="0.00"
+              style={{ flex: 1 }}
+            />
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCollAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await addCollateral(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('Collateral added')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Add collateral failed')
+                }
+              }}
+            >Add</button>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCollAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await withdrawCollateral(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('Collateral withdrawn')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Withdraw collateral failed')
+                }
+              }}
+            >Withdraw</button>
+          </div>
+
+          <div className="cb-caption" style={{ margin: '12px 0 6px' }}>CENT</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="number"
+              value={manageCentAmount}
+              onChange={(e) => setManageCentAmount(e.target.value)}
+              placeholder="0.00"
+              style={{ flex: 1 }}
+            />
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCentAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await withdrawCent(provider as any, selectedCollateral, 0n, amt, BigInt(Math.round(0.02 * 1e18)))
+                  setManageStatus('CENT withdrawn')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Withdraw CENT failed')
+                }
+              }}
+            >Borrow more</button>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  const amt = BigInt(Math.round(parseFloat(manageCentAmount || '0') * 1e18))
+                  if (amt <= 0n) { setManageStatus('Enter a valid amount'); return }
+                  await repayCent(provider as any, selectedCollateral, 0n, amt)
+                  setManageStatus('CENT repaid')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Repay failed')
+                }
+              }}
+            >Repay</button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+            <button
+              className="cb-btn cb-btn-tertiary"
+              onClick={async () => {
+                try {
+                  setManageStatus(null)
+                  const { ethers } = await import('ethers')
+                  const provider = new ethers.BrowserProvider((window as any).ethereum)
+                  await closeTrove(provider as any, selectedCollateral, 0n)
+                  setManageStatus('Position closed')
+                } catch (e) {
+                  setManageStatus(e instanceof Error ? e.message : 'Close failed')
+                }
+              }}
+            >Close Position</button>
+            {manageStatus && <div className="cb-caption">{manageStatus}</div>}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

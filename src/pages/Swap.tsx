@@ -4,6 +4,8 @@ import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 import { useToast } from "../context/ToastContext"
 import { useSwapKit } from "../state/swapkit"
 import { getQuote, executeSwap } from "../services/swapkit"
+import { useTransactionHistory } from "../hooks/useTransactionHistory"
+import TransactionHistory from "../components/TransactionHistory"
 
 /**
  * Swap/Convert Page - Coinbase Convert Style
@@ -20,6 +22,7 @@ export default function Swap() {
   const { address, isConnected } = useAppKitAccount()
   const { showToast } = useToast()
   const { error: swapkitError } = useSwapKit()
+  const { transactions, addTransaction, confirmTransaction, failTransaction, getTransactionsByType } = useTransactionHistory(address)
 
   const [step, setStep] = useState<'select' | 'amount' | 'preview' | 'confirm'>('amount')
   const [fromToken, setFromToken] = useState('BTC')
@@ -69,6 +72,8 @@ export default function Swap() {
 
     setLoading(true)
     setStep('confirm')
+    const txId = addTransaction("swap", amount, fromToken, `Swap ${amount} ${fromToken} → ${toToken}`)
+
     try {
       // Get fresh quote
       const quoteResult = await getQuote({
@@ -78,11 +83,12 @@ export default function Swap() {
         fromTokenSymbol: fromToken as any,
         toTokenSymbol: toToken as any,
       })
-      
+
       // Execute swap with quote
       await executeSwap(quoteResult, address, address)
+      confirmTransaction(txId)
       showToast('Swap completed successfully!', 'success')
-      
+
       // Reset after success
       setTimeout(() => {
         setStep('amount')
@@ -91,6 +97,8 @@ export default function Swap() {
       }, 2000)
     } catch (error) {
       console.error('Swap error:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Swap failed'
+      failTransaction(txId, errorMsg)
       showToast('Swap failed', 'error')
       setStep('preview')
     } finally {
@@ -535,7 +543,7 @@ export default function Swap() {
       </button>
 
       {/* Info */}
-      <div className="cb-card" style={{ 
+      <div className="cb-card" style={{
         marginTop: 'var(--cb-space-lg)',
         background: 'var(--cb-gray-1)',
       }}>
@@ -543,6 +551,19 @@ export default function Swap() {
           💡 Network fees apply. Rate locked for 60 seconds after preview.
         </p>
       </div>
+
+      {/* Transaction History */}
+      {transactions.length > 0 && (
+        <div style={{ marginTop: 'var(--cb-space-xl)' }}>
+          <h2 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-md)' }}>
+            Recent Swaps
+          </h2>
+          <TransactionHistory
+            transactions={getTransactionsByType("swap").slice(0, 5)}
+            emptyMessage="No swaps yet"
+          />
+        </div>
+      )}
     </div>
   )
 }

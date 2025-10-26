@@ -1,269 +1,212 @@
 import { Link } from "react-router-dom"
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 
-import { getEnvOptional as getEnv } from "../lib/runtime-env"
 import useCentBalance from "../hooks/useCentBalance"
-import { useMarketData } from "../hooks/useMarketData"
+import { useTrove } from "../hooks/useTrove"
+import { useStabilityPool } from "../hooks/useStabilityPool"
+import { getBranches } from "../config/cent"
 
 /**
- * Overview/Home Page - Coinbase Style
+ * Dashboard Page - USDaf Style
  * Features:
- * - Large balance display at top
- * - Quick action buttons (Buy, Receive)
- * - "Fund your account" CTA card
- * - Simple, clean mobile-first design
+ * - Total CENT balance at top
+ * - Active borrow positions (troves)
+ * - Stability pool deposits
+ * - Quick actions to Borrow and Earn
  */
 export default function Overview() {
-  const rpcUrl = getEnv("VITE_RPC_URL") || "unset"
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
   const { balance } = useCentBalance()
-  const { stats, loading: loadingMarket } = useMarketData(rpcUrl)
+
+  const branches = getBranches()
+
+  // Load trove data for each branch
+  const wbtcTrove = useTrove("WBTC18", address)
+  const cbBtcTrove = useTrove("cbBTC18", address)
+
+  // Load stability pool data for each branch
+  const wbtcSP = useStabilityPool("WBTC18", address)
+  const cbBtcSP = useStabilityPool("cbBTC18", address)
+
+  const hasWbtcTrove = wbtcTrove.data && wbtcTrove.data.entireDebt > 0n
+  const hasCbBtcTrove = cbBtcTrove.data && cbBtcTrove.data.entireDebt > 0n
+  const hasWbtcSP = parseFloat(wbtcSP.deposit) > 0
+  const hasCbBtcSP = parseFloat(cbBtcSP.deposit) > 0
+
+  const hasAnyPosition = hasWbtcTrove || hasCbBtcTrove || hasWbtcSP || hasCbBtcSP
+
+  // Not connected state
+  if (!isConnected || !address) {
+    return (
+      <div style={{
+        padding: 'var(--cb-space-lg)',
+        maxWidth: '480px',
+        margin: '0 auto',
+        textAlign: 'center',
+      }}>
+        <div style={{ paddingTop: 'var(--cb-space-2xl)', paddingBottom: 'var(--cb-space-xl)' }}>
+          <div style={{ fontSize: 64, marginBottom: 'var(--cb-space-md)' }}>🏦</div>
+          <h2 className="cb-title" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+            Bitcoin Banking
+          </h2>
+          <p className="cb-body" style={{ color: 'var(--cb-text-secondary)', marginBottom: 'var(--cb-space-lg)' }}>
+            Borrow stablecoins against BTC, earn yields, and more
+          </p>
+          <button className="cb-btn cb-btn-primary" onClick={() => open()}>
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ 
+    <div style={{
       padding: 'var(--cb-space-lg)',
       maxWidth: '480px',
       margin: '0 auto',
     }}>
       {/* Balance Section */}
-      {!address ? (
-        /* Not Connected */
-        <div style={{ 
-          textAlign: 'center', 
-          paddingTop: 'var(--cb-space-2xl)',
-          paddingBottom: 'var(--cb-space-xl)',
-        }}>
-          <div className="balance-large">$0.00</div>
-          <div className="cb-caption" style={{ marginTop: 'var(--cb-space-sm)' }}>
-            New to Medici Account?
-          </div>
-          <p className="cb-body-sm" style={{ 
-            color: 'var(--cb-text-secondary)',
-            marginTop: 'var(--cb-space-xs)',
-            marginBottom: 'var(--cb-space-lg)',
-          }}>
-            Here's how to get started
-          </p>
+      <div style={{
+        textAlign: 'center',
+        paddingTop: 'var(--cb-space-xl)',
+        paddingBottom: 'var(--cb-space-lg)',
+      }}>
+        <div className="balance-large">
+          ${balance !== null ? (Number(balance) / 1e6).toFixed(2) : '0.00'}
         </div>
-      ) : (
-        /* Connected - Show Balance */
-        <div style={{ 
-          textAlign: 'center', 
-          paddingTop: 'var(--cb-space-xl)',
-          paddingBottom: 'var(--cb-space-lg)',
-        }}>
-          <div className="balance-large">
-            ${balance !== null ? (Number(balance) / 1e6).toFixed(2) : '0.00'}
-          </div>
-          <div className="cb-caption" style={{ marginTop: 'var(--cb-space-sm)' }}>
-            Total Balance
-          </div>
+        <div className="cb-caption" style={{ marginTop: 'var(--cb-space-sm)' }}>
+          CENT Balance
         </div>
-      )}
+      </div>
 
       {/* Quick Actions */}
       <div className="quick-actions" style={{ marginBottom: 'var(--cb-space-xl)' }}>
-        <Link to="/buy" className="quick-action">
-          <div className="quick-action-icon">💰</div>
-          <div className="quick-action-label">Buy</div>
+        <Link to="/borrow" className="quick-action">
+          <div className="quick-action-icon">💳</div>
+          <div className="quick-action-label">Borrow</div>
         </Link>
-        
-        <Link to="/pay" className="quick-action">
-          <div className="quick-action-icon">📥</div>
-          <div className="quick-action-label">Receive</div>
+
+        <Link to="/earn" className="quick-action">
+          <div className="quick-action-icon">📈</div>
+          <div className="quick-action-label">Earn</div>
         </Link>
       </div>
 
-      {/* Fund Account CTA (if not connected or low balance) */}
-      {(!address || (balance !== null && Number(balance) < 100000000)) && (
-        <div style={{ 
-          background: 'rgba(0, 218, 255, 0.5)',
-          borderRadius: '20px',
-          padding: 'var(--cb-space-xl)',
-          marginBottom: 'var(--cb-space-xl)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {/* Background Image with 20% opacity */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'url(/medici-footer.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.2,
-            pointerEvents: 'none',
-          }} />
-
-          {/* Content (relative to sit above background) */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            {/* Decorative Icon Box */}
-            <div style={{
-              width: '72px',
-              height: '72px',
-              background: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: '16px',
-              marginBottom: 'var(--cb-space-md)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '36px',
-            }}>
-              💳
-            </div>
-
-            <h3 style={{ 
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: 'var(--cb-space-xs)',
-              color: 'white',
-            }}>
-              Fund your account
-            </h3>
-            <p style={{ 
-              fontSize: '15px',
-              marginBottom: 'var(--cb-space-lg)',
-              color: 'rgba(255, 255, 255, 0.9)',
-            }}>
-              Add crypto or stablecoin
-            </p>
-
-            {!isConnected ? (
-              <button 
-                onClick={() => open()}
-                style={{ 
-                  background: 'white',
-                  color: 'black',
-                  border: 'none',
-                  padding: '14px 28px',
-                  borderRadius: '12px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  width: '100%',
-                }}
-              >
-                Get Started
-              </button>
-            ) : (
-              <Link to="/invest" style={{ 
-                background: 'white',
-                color: 'black',
-                border: 'none',
-                padding: '14px 28px',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                textDecoration: 'none',
-                display: 'block',
-                textAlign: 'center',
-              }}>
-                Fund my account
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Market Info Cards - Hidden when not connected to match Figma */}
-      {address && stats && (
-        <div>
-          <h3 style={{ 
-            fontSize: '17px',
-            fontWeight: 600,
-            marginBottom: 'var(--cb-space-md)',
-            color: 'var(--cb-text-primary)',
-          }}>
-            Buy BTC or USDC and start earning
+      {/* Active Positions */}
+      {hasAnyPosition ? (
+        <div style={{ marginBottom: 'var(--cb-space-xl)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-md)' }}>
+            Your Positions
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Bitcoin Card */}
-            <Link 
-              to="/invest" 
-              style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--cb-space-md)',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                background: 'var(--cb-card-bg)',
-                padding: '16px',
-                borderRadius: '16px',
-              }}
-            >
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: '#FF9500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px',
-              }}>
-                ₿
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '17px', fontWeight: 600, color: 'white' }}>Bitcoin</div>
-                <div style={{ fontSize: '15px', color: 'var(--cb-text-secondary)' }}>BTC</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '17px', fontWeight: 600, color: 'white' }}>$67,500</div>
-                <div style={{ fontSize: '15px', color: 'var(--cb-green)' }}>+2.5%</div>
-              </div>
-            </Link>
+          {/* Borrow Positions */}
+          {(hasWbtcTrove || hasCbBtcTrove) && (
+            <div className="cb-card" style={{ padding: 'var(--cb-space-md)', marginBottom: 'var(--cb-space-md)' }}>
+              <div className="cb-caption" style={{ marginBottom: 'var(--cb-space-sm)' }}>Borrow Positions</div>
 
-            {/* USDC Card */}
-            <Link 
-              to="/invest" 
-              style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--cb-space-md)',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                background: 'var(--cb-card-bg)',
-                padding: '16px',
-                borderRadius: '16px',
-              }}
-            >
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: '#0A84FF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px',
-                color: 'white',
-              }}>
-                $
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '17px', fontWeight: 600, color: 'white' }}>USD Coin</div>
-                <div style={{ fontSize: '15px', color: 'var(--cb-text-secondary)' }}>USDC</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '17px', fontWeight: 600, color: 'white' }}>
-                  {loadingMarket ? '...' : `${stats.baseAPY}%`}
+              {hasWbtcTrove && wbtcTrove.data && (
+                <div style={{ marginBottom: hasWbtcTrove && hasCbBtcTrove ? 'var(--cb-space-sm)' : 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div className="cb-body">WBTC</div>
+                      <div className="cb-caption">
+                        Collateral: {(Number(wbtcTrove.data.entireColl) / 1e18).toFixed(6)} BTC
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="cb-body cb-mono">
+                        {(Number(wbtcTrove.data.entireDebt) / 1e18).toFixed(2)} CENT
+                      </div>
+                      <div className="cb-caption">
+                        {(Number(wbtcTrove.data.annualInterestRate) / 1e16).toFixed(2)}% APR
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '15px', color: 'var(--cb-text-secondary)' }}>APY</div>
-              </div>
+              )}
+
+              {hasCbBtcTrove && cbBtcTrove.data && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div className="cb-body">cbBTC</div>
+                      <div className="cb-caption">
+                        Collateral: {(Number(cbBtcTrove.data.entireColl) / 1e18).toFixed(6)} BTC
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="cb-body cb-mono">
+                        {(Number(cbBtcTrove.data.entireDebt) / 1e18).toFixed(2)} CENT
+                      </div>
+                      <div className="cb-caption">
+                        {(Number(cbBtcTrove.data.annualInterestRate) / 1e16).toFixed(2)}% APR
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Stability Pool Positions */}
+          {(hasWbtcSP || hasCbBtcSP) && (
+            <div className="cb-card" style={{ padding: 'var(--cb-space-md)' }}>
+              <div className="cb-caption" style={{ marginBottom: 'var(--cb-space-sm)' }}>Stability Pool</div>
+
+              {hasWbtcSP && (
+                <div style={{ marginBottom: hasWbtcSP && hasCbBtcSP ? 'var(--cb-space-sm)' : 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div className="cb-body">WBTC Pool</div>
+                      <div className="cb-caption">BTC Gains: {wbtcSP.collGain}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="cb-body cb-mono">{wbtcSP.deposit} CENT</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {hasCbBtcSP && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div className="cb-body">cbBTC Pool</div>
+                      <div className="cb-caption">BTC Gains: {cbBtcSP.collGain}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="cb-body cb-mono">{cbBtcSP.deposit} CENT</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* No Positions - Show Get Started CTA */
+        <div className="cb-card" style={{
+          padding: 'var(--cb-space-xl)',
+          marginBottom: 'var(--cb-space-xl)',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 'var(--cb-space-sm)' }}>🚀</div>
+          <h3 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+            Get Started
+          </h3>
+          <p className="cb-caption" style={{ marginBottom: 'var(--cb-space-md)' }}>
+            Borrow CENT against BTC or deposit CENT to earn yields
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--cb-space-sm)' }}>
+            <Link to="/borrow" className="cb-btn cb-btn-primary" style={{ flex: 1 }}>
+              Borrow
+            </Link>
+            <Link to="/earn" className="cb-btn cb-btn-tertiary" style={{ flex: 1 }}>
+              Earn
             </Link>
           </div>
-        </div>
-      )}
-
-      {/* Empty State for Non-Connected */}
-      {!address && (
-        <div style={{ textAlign: 'center', marginTop: 'var(--cb-space-2xl)' }}>
-          <p className="cb-body-sm" style={{ color: 'var(--cb-text-secondary)' }}>
-            Connect your wallet to view your portfolio and start earning with Bitcoin and stablecoins.
-          </p>
         </div>
       )}
     </div>

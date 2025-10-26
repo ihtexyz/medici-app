@@ -1,15 +1,26 @@
 import { useState } from "react"
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 
 import useCentBalance from "../hooks/useCentBalance"
 import useWallet from "../hooks/useWallet"
+import { getBranches } from "../config/cent"
 import { getEnvOptional as getEnv } from "../lib/runtime-env"
 import { claimRewards } from "../services/execution"
 import { fetchRewardClaim } from "../services/rewardsApi"
 import { CHAIN_ID } from "../config/contracts"
 
+/**
+ * Rewards Page - Coinbase Style
+ * Features:
+ * - CENT balance and claimable rewards
+ * - Claim rewards button
+ * - Reward stats and info
+ */
 export default function Rewards() {
+  const { open } = useAppKit()
+  const { address, isConnected } = useAppKitAccount()
   const rpcUrl = getEnv("VITE_RPC_URL")
-  const { balance, claimable, loading, error, address } = useCentBalance()
+  const { balance, claimable, loading, error } = useCentBalance()
   const { provider } = useWallet(rpcUrl)
   const [claimStatus, setClaimStatus] = useState<string | null>(null)
   const [claiming, setClaiming] = useState(false)
@@ -53,65 +64,137 @@ export default function Rewards() {
     }
   }
 
-  return (
-    <>
-      <section className="hero">
-        <div className="hero-lede">Rewards</div>
-        <h1 className="hero-title">Earn CENT</h1>
-        <p className="hero-sub">
-          Lock BTC and participate to earn CENT rewards.
+  // Not connected
+  if (!isConnected) {
+    return (
+      <div style={{
+        padding: 'var(--cb-space-lg)',
+        maxWidth: '480px',
+        margin: '0 auto',
+        textAlign: 'center',
+        paddingTop: 'var(--cb-space-2xl)',
+      }}>
+        <div style={{ fontSize: '64px', marginBottom: 'var(--cb-space-lg)' }}>🎁</div>
+        <h2 className="cb-title" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          Earn rewards
+        </h2>
+        <p className="cb-body" style={{
+          color: 'var(--cb-text-secondary)',
+          marginBottom: 'var(--cb-space-xl)',
+        }}>
+          Connect your wallet to view and claim your CENT rewards
         </p>
-      </section>
+        <button
+          className="cb-btn cb-btn-primary"
+          onClick={() => open()}
+        >
+          Connect Wallet
+        </button>
+      </div>
+    )
+  }
 
-      <section className="kpi-grid">
-        <div className="card">
-          <div className="card-label">Your CENT</div>
-          <div className="card-value">{loading ? "…" : balance}</div>
-        </div>
-        <div className="card">
-          <div className="card-label">Claimable</div>
-          <div className="card-value">{loading ? "…" : claimable}</div>
-        </div>
-        <div className="card">
-          <div className="card-label">Emission Rate</div>
-          <div className="card-value">—</div>
-        </div>
-        <div className="card">
-          <div className="card-label">Epoch</div>
-          <div className="card-value">—</div>
-        </div>
-      </section>
+  return (
+    <div style={{
+      padding: 'var(--cb-space-lg)',
+      maxWidth: '480px',
+      margin: '0 auto',
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: 'var(--cb-space-xl)' }}>
+        <h1 className="cb-title">Rewards</h1>
+        <p className="cb-caption" style={{ marginTop: 'var(--cb-space-xs)' }}>
+          Earn CENT by participating in the protocol
+        </p>
+      </div>
 
-      <section className="actions" style={{ marginTop: 16 }}>
-        <div className="action-grid">
-          <div className="action-card">
-            <div className="action-head">
-              <div className="action-title">Claim CENT</div>
-            </div>
-            <div className="action-body">Claim your accrued CENT rewards.</div>
-            <div className="action-cta">
-              <button
-                className="button"
-                type="button"
-                onClick={handleClaim}
-                disabled={claiming}
-              >
-                {claiming ? "Claiming…" : "Claim CENT"}
-              </button>
-            </div>
+      {/* Stats Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 'var(--cb-space-md)',
+        marginBottom: 'var(--cb-space-xl)',
+      }}>
+        <div className="cb-card" style={{ padding: 'var(--cb-space-md)' }}>
+          <div className="cb-caption" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+            Your CENT
           </div>
-          {(error || claimStatus) && (
-            <div className="action-card">
-              <div className="action-head">
-                <div className="action-title">Status</div>
-              </div>
-              <div className="action-body" style={{ color: "#ff7a7a" }}>
-                {error || claimStatus}
-              </div>
-            </div>
-          )}
+          <div className="cb-body" style={{ fontSize: '20px', fontWeight: 600 }}>
+            {loading ? '…' : balance || '0'}
+          </div>
         </div>
-      </section>
-    </>
+
+        <div className="cb-card" style={{ padding: 'var(--cb-space-md)' }}>
+          <div className="cb-caption" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+            Claimable
+          </div>
+          <div className="cb-body" style={{ fontSize: '20px', fontWeight: 600, color: 'var(--cb-green)' }}>
+            {loading ? '…' : claimable || '0'}
+          </div>
+        </div>
+      </div>
+
+      {/* Claim Rewards Card */}
+      <div className="cb-card" style={{ padding: 'var(--cb-space-lg)', marginBottom: 'var(--cb-space-md)' }}>
+        <h3 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+          Claim CENT Rewards
+        </h3>
+        <p className="cb-caption" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          Claim your accrued CENT rewards from protocol participation
+        </p>
+        <button
+          className="cb-btn cb-btn-primary"
+          onClick={handleClaim}
+          disabled={claiming || !claimable || claimable === "0"}
+          style={{ width: '100%' }}
+        >
+          {claiming ? 'Claiming…' : 'Claim Rewards'}
+        </button>
+      </div>
+
+      {/* Status Messages */}
+      {(error || claimStatus) && (
+        <div className="cb-card" style={{
+          padding: 'var(--cb-space-md)',
+          marginBottom: 'var(--cb-space-md)',
+          background: error ? 'rgba(255, 59, 48, 0.1)' : 'rgba(48, 209, 88, 0.1)',
+          border: `1px solid ${error ? 'var(--cb-red)' : 'var(--cb-green)'}`,
+        }}>
+          <div className="cb-caption" style={{ color: error ? 'var(--cb-red)' : 'var(--cb-green)' }}>
+            {error || claimStatus}
+          </div>
+        </div>
+      )}
+
+      {/* Info Card */}
+      <div className="cb-card" style={{
+        padding: 'var(--cb-space-lg)',
+        background: 'var(--cb-gray-1)',
+      }}>
+        <div style={{ marginBottom: 'var(--cb-space-md)' }}>
+          <h3 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-xs)' }}>
+            How to earn
+          </h3>
+          <p className="cb-caption">
+            Earn CENT rewards by:
+          </p>
+        </div>
+        <ul style={{
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+        }}>
+          <li className="cb-caption" style={{ marginBottom: 'var(--cb-space-sm)' }}>
+            • Depositing to stability pools
+          </li>
+          <li className="cb-caption" style={{ marginBottom: 'var(--cb-space-sm)' }}>
+            • Maintaining active borrow positions
+          </li>
+          <li className="cb-caption">
+            • Participating in governance (coming soon)
+          </li>
+        </ul>
+      </div>
+    </div>
   )
 }

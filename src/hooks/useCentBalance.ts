@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { Provider } from "ethers"
 import { Contract, JsonRpcProvider } from "ethers"
 
-import { CENT, CentErc20Abi } from "../token/cent"
+import { CENT } from "../token/cent"
 import { getEnvOptional } from "../lib/runtime-env"
 
 import useWallet from "./useWallet"
@@ -43,7 +43,11 @@ export default function useCentBalance() {
       setLoading(true)
       setError(null)
       try {
-        const erc20 = new Contract(CENT.address, CentErc20Abi, readProvider)
+        const ERC20_ABI = [
+          { name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+          { name: "decimals", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint8" }] },
+        ] as const
+        const erc20 = new Contract(CENT.address, ERC20_ABI, readProvider)
         const rewards = new Contract(
           rewardAddress,
           [

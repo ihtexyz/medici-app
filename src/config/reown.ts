@@ -6,7 +6,7 @@
 
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { arbitrumSepolia } from '@reown/appkit/networks'
+import { arbitrumSepolia, sepolia } from '@reown/appkit/networks'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { getEnvOptional } from '../lib/runtime-env'
@@ -26,7 +26,7 @@ const queryClient = new QueryClient()
 
 // Wagmi configuration
 const wagmiAdapter = new WagmiAdapter({
-  networks: [arbitrumSepolia],
+  networks: [arbitrumSepolia, sepolia],
   projectId,
   ssr: false,
 })
@@ -42,7 +42,7 @@ const getAppUrl = () => {
 // Create AppKit instance
 export const modal = createAppKit({
   adapters: [wagmiAdapter],
-  networks: [arbitrumSepolia],
+  networks: [arbitrumSepolia, sepolia],
   projectId,
   metadata: {
     name: 'Medici by Venice Fi',

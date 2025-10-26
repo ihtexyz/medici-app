@@ -1,26 +1,47 @@
-export default {
-  preset: "ts-jest",
-  verbose: true,
-  silent: true,
-  testEnvironment: "jest-environment-jsdom",
-  modulePathIgnorePatterns: ["<rootDir>/dist"],
-  transform: {
-    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.jest.json" }],
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "tsconfig.jest.json" }],
-  },
-  transformIgnorePatterns: [
-    "node_modules/(?!((@wagmi|@tanstack|@rainbow-me|ethers|viem)/.*)\\.js$)",
+import type { Config } from 'jest'
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  roots: ['<rootDir>/src'],
+  testMatch: [
+    '**/__tests__/**/*.+(ts|tsx|js)',
+    '**/?(*.)+(spec|test).+(ts|tsx|js)',
   ],
-  moduleNameMapper: {
-    "^#/(.*)": "<rootDir>/src/$1",
-    "^.+\\.svg$": "jest-svg-transformer",
-    "^.+\\.(css|less|scss)$": "identity-obj-proxy",
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+      isolatedModules: true,
+    }],
   },
-  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
-  modulePaths: ["<rootDir>/src"],
-  globals: {
-    "ts-jest": {
-      diagnostics: false,
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/main.tsx',
+    '!src/vite-env.d.ts',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50,
     },
   },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@testing-library|@babel|wagmi|@wagmi|viem)/)',
+  ],
 }
+
+export default config
