@@ -1,19 +1,23 @@
 /**
  * Multi-Chain Token Configuration
- * Token addresses for Base Sepolia, Arbitrum Sepolia, and ETH Sepolia
+ * Token addresses for Base Sepolia, Arbitrum Sepolia, ETH Sepolia, and HyperEVM
  *
  * Note: Testnet token addresses vary by protocol. These are commonly used addresses.
+ * HyperEVM addresses will be updated after CENT protocol deployment.
  */
 
 export const CHAIN_IDS = {
   BASE_SEPOLIA: 84532,
+  HYPEREVM: 999,
   ARBITRUM_SEPOLIA: 421614,
   ETH_SEPOLIA: 11155111,
 } as const
 
 /**
  * Token addresses by chain
- * Native ETH is represented as 'native'
+ * Native tokens are represented as 'native'
+ * - ETH on Base, Arbitrum, Ethereum Sepolia
+ * - HYPE on HyperEVM
  */
 export const TOKEN_ADDRESSES = {
   // Base Sepolia (84532)
@@ -22,6 +26,19 @@ export const TOKEN_ADDRESSES = {
     WETH: '0x4200000000000000000000000000000000000006', // Canonical WETH
     USDC: '0x036cbd53842c5426634e7929541ec2318f3dcf7e', // Circle USDC
     WBTC: '0x4131600fd78eb697413ca806a8f748edb959ddcd', // Wrapped Bitcoin
+  },
+
+  // HyperEVM (999) - Hyperliquid's EVM-compatible layer
+  [CHAIN_IDS.HYPEREVM]: {
+    HYPE: 'native', // Native token on HyperEVM
+    // TODO: Update these addresses after CENT protocol deployment
+    WHYPE: '0x...', // Wrapped HYPE (if exists)
+    UBTC: '0x...', // Bridged Bitcoin
+    WETH: '0x...', // Bridged Ethereum
+    USDC: '0x...', // Bridged USDC
+    // Additional HyperEVM ecosystem tokens
+    wstHYPE: '0x...', // Liquid staked HYPE
+    hwHLP: '0x...', // Hyperwave HLP token
   },
 
   // Arbitrum Sepolia (421614)
@@ -70,6 +87,32 @@ export const TOKEN_METADATA = {
     name: 'Venice CENT',
     decimals: 6,
   },
+  // HyperEVM tokens
+  HYPE: {
+    symbol: 'HYPE',
+    name: 'Hyperliquid',
+    decimals: 18,
+  },
+  WHYPE: {
+    symbol: 'WHYPE',
+    name: 'Wrapped HYPE',
+    decimals: 18,
+  },
+  UBTC: {
+    symbol: 'UBTC',
+    name: 'Universal Bitcoin',
+    decimals: 8,
+  },
+  wstHYPE: {
+    symbol: 'wstHYPE',
+    name: 'Wrapped Staked HYPE',
+    decimals: 18,
+  },
+  hwHLP: {
+    symbol: 'hwHLP',
+    name: 'Hyperwave HLP',
+    decimals: 18,
+  },
 } as const
 
 export type TokenSymbol = keyof typeof TOKEN_METADATA
@@ -90,10 +133,10 @@ export function getTokenAddress(
 }
 
 /**
- * Check if token is native (ETH)
+ * Check if token is native (ETH or HYPE)
  */
 export function isNativeToken(token: TokenSymbol): boolean {
-  return token === 'ETH'
+  return token === 'ETH' || token === 'HYPE'
 }
 
 /**
@@ -141,12 +184,12 @@ export function formatTokenAmount(
   const formatted = numAmount / divisor
 
   // Format based on token type
-  if (token === 'WBTC') {
-    return formatted.toFixed(6) // 6 decimals for BTC
+  if (token === 'WBTC' || token === 'UBTC') {
+    return formatted.toFixed(6) // 6 decimals for BTC variants
   } else if (token === 'USDC' || token === 'CENT') {
-    return formatted.toFixed(2) // 2 decimals for USD
+    return formatted.toFixed(2) // 2 decimals for USD stablecoins
   } else {
-    return formatted.toFixed(4) // 4 decimals for ETH/WETH
+    return formatted.toFixed(4) // 4 decimals for ETH/WETH/HYPE/WHYPE
   }
 }
 
