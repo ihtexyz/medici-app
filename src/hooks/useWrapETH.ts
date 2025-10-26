@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
-import { BASE_SEPOLIA_TOKENS } from '../config/base'
+import { getWETHAddress as getWETHAddressFromConfig } from '../config/tokens-multichain'
 
 /**
  * WETH ABI - Standard WETH9 interface
@@ -32,18 +32,9 @@ const WETH_ABI = [
  * Get WETH address for current chain
  */
 function getWETHAddress(chainId: number | undefined): `0x${string}` | undefined {
-  switch (chainId) {
-    case 84532: // Base Sepolia
-      return BASE_SEPOLIA_TOKENS.WETH as `0x${string}`
-    case 421614: // Arbitrum Sepolia
-      // TODO: Add Arbitrum Sepolia WETH address
-      return undefined
-    case 11155111: // ETH Sepolia
-      // TODO: Add ETH Sepolia WETH address
-      return undefined
-    default:
-      return undefined
-  }
+  if (!chainId) return undefined
+  const address = getWETHAddressFromConfig(chainId as 84532 | 421614 | 11155111)
+  return address as `0x${string}` | undefined
 }
 
 /**
