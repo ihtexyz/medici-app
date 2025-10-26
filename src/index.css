@@ -1,6 +1,7 @@
 /* Import design system */
 @import './styles/design-system.css';
 @import './styles/coinbase-design.css';
+@import './styles/animations.css';
 
 /* https://piccalil.li/blog/a-modern-css-reset */
 

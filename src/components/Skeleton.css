@@ -1,0 +1,233 @@
+/**
+ * Skeleton Loading Styles
+ *
+ * Provides shimmer animations and layouts for skeleton screens
+ */
+
+/* Base skeleton element */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Utility margins */
+.skeleton.mb-1 {
+  margin-bottom: 4px;
+}
+
+.skeleton.mb-2 {
+  margin-bottom: 8px;
+}
+
+.skeleton.mb-3 {
+  margin-bottom: 12px;
+}
+
+.skeleton.mb-4 {
+  margin-bottom: 16px;
+}
+
+/* Skeleton Card */
+.skeleton-card {
+  background: var(--cb-surface-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* Skeleton Balance */
+.skeleton-balance {
+  padding: 12px 0;
+}
+
+/* Skeleton Stat */
+.skeleton-stat {
+  padding: 12px;
+  text-align: center;
+}
+
+/* Skeleton Table */
+.skeleton-table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+.skeleton-table-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.skeleton-table-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skeleton-table-cell {
+  /* Column cells inherit grid layout */
+}
+
+/* Skeleton Trove */
+.skeleton-trove {
+  background: var(--cb-surface-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.skeleton-trove-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skeleton-trove-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.skeleton-trove-actions {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Skeleton Transaction */
+.skeleton-transaction {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--cb-surface-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.skeleton-transaction-icon {
+  flex-shrink: 0;
+}
+
+.skeleton-transaction-content {
+  flex: 1;
+}
+
+.skeleton-transaction-amount {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Skeleton List */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-list-item {
+  /* List item styling */
+}
+
+/* Skeleton Input */
+.skeleton-input-wrapper {
+  margin-bottom: 16px;
+}
+
+/* Skeleton Page */
+.skeleton-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.skeleton-page-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: light) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.05) 25%,
+      rgba(0, 0, 0, 0.1) 50%,
+      rgba(0, 0, 0, 0.05) 75%
+    );
+    background-size: 200% 100%;
+  }
+
+  .skeleton-card,
+  .skeleton-trove,
+  .skeleton-transaction {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .skeleton-trove-header,
+  .skeleton-trove-actions {
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .skeleton-table-header {
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .skeleton-table-row {
+    border-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .skeleton-trove-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .skeleton-page-content {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-transaction {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .skeleton-transaction-amount {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-trove-stats {
+    grid-template-columns: 1fr;
+  }
+}

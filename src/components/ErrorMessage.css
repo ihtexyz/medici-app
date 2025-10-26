@@ -1,0 +1,339 @@
+/**
+ * Error Message Styles
+ *
+ * Styles for error display components
+ */
+
+/* ============================================
+   ERROR MESSAGE (Default)
+   ============================================ */
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  color: #fca5a5;
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.error-message-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.error-message-icon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.error-message-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fecaca;
+  flex: 1;
+}
+
+.error-message-close {
+  background: transparent;
+  border: none;
+  color: #fca5a5;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.error-message-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.error-message-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #fecaca;
+  margin-left: 32px;
+}
+
+.error-message-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  margin-left: 32px;
+  padding: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 2px solid #fbbf24;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #fde68a;
+}
+
+.error-message-suggestion-icon {
+  flex-shrink: 0;
+}
+
+.error-message-action {
+  margin-top: 12px;
+  margin-left: 32px;
+}
+
+.error-message-action-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-message-action-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.error-message-action-button:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   INLINE ERROR
+   ============================================ */
+
+.inline-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 12px;
+  margin-top: 4px;
+  animation: shake 0.3s ease;
+}
+
+.inline-error svg {
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+/* ============================================
+   ERROR ALERT
+   ============================================ */
+
+.error-alert {
+  background: #1a1415;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  animation: bounceIn 0.4s ease-out;
+}
+
+.error-alert-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.error-alert-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.error-alert-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fecaca;
+  margin-bottom: 4px;
+}
+
+.error-alert-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #fca5a5;
+  margin-bottom: 8px;
+}
+
+.error-alert-suggestion {
+  font-size: 13px;
+  color: #fde68a;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 2px solid #fbbf24;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.error-alert-retry {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-alert-retry:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.error-alert-retry:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   LIGHT MODE
+   ============================================ */
+
+@media (prefers-color-scheme: light) {
+  .error-message {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .error-message-icon {
+    color: #dc2626;
+  }
+
+  .error-message-title,
+  .error-message-body {
+    color: #991b1b;
+  }
+
+  .error-message-suggestion {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #78350f;
+  }
+
+  .error-alert {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .error-alert-title,
+  .error-alert-message {
+    color: #991b1b;
+  }
+
+  .error-alert-suggestion {
+    background: #fef3c7;
+    color: #78350f;
+  }
+
+  .inline-error {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .inline-error svg {
+    color: #dc2626;
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .error-message {
+    padding: 14px;
+  }
+
+  .error-message-body {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+
+  .error-message-suggestion {
+    margin-left: 0;
+  }
+
+  .error-message-action {
+    margin-left: 0;
+  }
+
+  .error-alert {
+    padding: 16px;
+  }
+
+  .error-alert-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .error-alert-icon {
+    font-size: 24px;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-3px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

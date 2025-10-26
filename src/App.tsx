@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react"
 import { WagmiProvider, QueryClientProvider, queryClient, wagmiConfig } from "./config/reown"
 import { OnchainKitProvider } from '@coinbase/onchainkit'
 import { base, baseSepolia } from 'viem/chains'
+import { Toaster } from 'react-hot-toast'
 
 import Layout from "./components/Layout"
 const Overview = lazy(() => import("./pages/Overview"))
@@ -38,6 +39,19 @@ import ErrorBoundary from "./components/ErrorBoundary"
 function App() {
   return (
     <ErrorBoundary>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+        }}
+      />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <OnchainKitProvider
