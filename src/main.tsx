@@ -7,6 +7,9 @@ import App from "./App"
 // Import global styles
 import "./index.css"
 
+// Import OnchainKit styles
+import '@coinbase/onchainkit/styles.css'
+
 // Import error boundary
 import ErrorBoundary from "./components/ErrorBoundary"
 import { initMonitoring } from "./lib/monitoring"

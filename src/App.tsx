@@ -1,6 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { lazy, Suspense } from "react"
 import { WagmiProvider, QueryClientProvider, queryClient, wagmiConfig } from "./config/reown"
+import { OnchainKitProvider } from '@coinbase/onchainkit'
+import { base, baseSepolia } from 'viem/chains'
 
 import Layout from "./components/Layout"
 const Overview = lazy(() => import("./pages/Overview"))
@@ -11,6 +13,7 @@ const Settings = lazy(() => import("./pages/Settings"))
 const Portfolio = lazy(() => import("./pages/Portfolio"))
 const Swap = lazy(() => import("./pages/Swap"))
 const Bank = lazy(() => import("./pages/Bank"))
+const BaseFeatures = lazy(() => import("./pages/BaseFeatures"))
 import { SwapKitProvider } from "./state/swapkit"
 import { ContactsProvider } from "./context/ContactsContext"
 import { ToastProvider } from "./context/ToastContext"
@@ -37,36 +40,42 @@ function App() {
     <ErrorBoundary>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <ToastProvider>
-            <SwapKitProvider>
-              <ContactsProvider>
-                <BrowserRouter>
-                  <Layout>
-                    <Suspense fallback={
-                      <div style={{ 
-                        padding: 16, 
-                        textAlign: 'center',
-                        color: 'var(--cb-text-secondary)',
-                      }}>
-                        Loading…
-                      </div>
-                    }>
-                      <Routes>
-                        <Route path="/" element={<Overview />} />
-                        <Route path="/borrow" element={<Borrow />} />
-                        <Route path="/earn" element={<Earn />} />
-                        <Route path="/rewards" element={<Rewards />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/portfolio" element={<Portfolio />} />
-                        <Route path="/swap" element={<Swap />} />
-                        <Route path="/bank" element={<Bank />} />
-                      </Routes>
-                    </Suspense>
-                  </Layout>
-                </BrowserRouter>
-              </ContactsProvider>
-            </SwapKitProvider>
-          </ToastProvider>
+          <OnchainKitProvider
+            apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY}
+            chain={baseSepolia} // Use Base Sepolia as primary chain
+          >
+            <ToastProvider>
+              <SwapKitProvider>
+                <ContactsProvider>
+                  <BrowserRouter>
+                    <Layout>
+                      <Suspense fallback={
+                        <div style={{
+                          padding: 16,
+                          textAlign: 'center',
+                          color: 'var(--cb-text-secondary)',
+                        }}>
+                          Loading…
+                        </div>
+                      }>
+                        <Routes>
+                          <Route path="/" element={<Overview />} />
+                          <Route path="/borrow" element={<Borrow />} />
+                          <Route path="/earn" element={<Earn />} />
+                          <Route path="/rewards" element={<Rewards />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/portfolio" element={<Portfolio />} />
+                          <Route path="/swap" element={<Swap />} />
+                          <Route path="/bank" element={<Bank />} />
+                          <Route path="/base" element={<BaseFeatures />} />
+                        </Routes>
+                      </Suspense>
+                    </Layout>
+                  </BrowserRouter>
+                </ContactsProvider>
+              </SwapKitProvider>
+            </ToastProvider>
+          </OnchainKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </ErrorBoundary>

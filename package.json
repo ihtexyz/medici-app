@@ -19,6 +19,7 @@
     "format:fix": "pnpm run lint:eslint:fix && pnpm run lint:config:fix"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^1.1.1",
     "@rainbow-me/rainbowkit": "2.2.8",
     "@reown/appkit": "^1.8.9",
     "@reown/appkit-adapter-wagmi": "^1.8.9",
