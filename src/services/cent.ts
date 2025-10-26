@@ -9,6 +9,7 @@ import { HintHelpers as HintHelpersAbi } from "../../bold-main/frontend/app/src/
 import { SortedTroves as SortedTrovesAbi } from "../../bold-main/frontend/app/src/abi/SortedTroves";
 import { StabilityPool as StabilityPoolAbi } from "../../bold-main/frontend/app/src/abi/StabilityPool";
 import { MultiTroveGetter as MultiTroveGetterAbi } from "../../bold-main/frontend/app/src/abi/MultiTroveGetter";
+import { CollateralRegistry as CollateralRegistryAbi } from "../../bold-main/frontend/app/src/abi/CollateralRegistry";
 
 export type OpenTroveParams = {
   collateralSymbol: string; // e.g., "WBTC18" or "cbBTC18"
@@ -266,6 +267,47 @@ export async function faucetTap(
   if (!branch) throw new Error(`Unknown token: ${tokenSymbol}`);
   const faucet = new Contract(branch.collToken, ERC20_FAUCET_ABI, signer);
   const tx = await faucet.tap();
+  return tx.wait();
+}
+
+/**
+ * Redemption Functions
+ */
+
+export async function getRedemptionRate(provider: BrowserProvider): Promise<bigint> {
+  if (!CENT_ADDRESSES) throw new Error("CENT addresses not configured");
+  const cr = new Contract(CENT_ADDRESSES.collateralRegistry!, CollateralRegistryAbi, provider);
+  return cr.getRedemptionRate();
+}
+
+export async function getRedemptionRateForAmount(
+  provider: BrowserProvider,
+  centAmount: bigint,
+): Promise<bigint> {
+  if (!CENT_ADDRESSES) throw new Error("CENT addresses not configured");
+  const cr = new Contract(CENT_ADDRESSES.collateralRegistry!, CollateralRegistryAbi, provider);
+  return cr.getRedemptionRateForRedeemedAmount(centAmount);
+}
+
+export async function getRedemptionFee(
+  provider: BrowserProvider,
+  centAmount: bigint,
+): Promise<bigint> {
+  if (!CENT_ADDRESSES) throw new Error("CENT addresses not configured");
+  const cr = new Contract(CENT_ADDRESSES.collateralRegistry!, CollateralRegistryAbi, provider);
+  return cr.getEffectiveRedemptionFeeInBold(centAmount);
+}
+
+export async function redeemCollateral(
+  provider: BrowserProvider,
+  centAmount: bigint,
+  maxFeePercentage: bigint,
+  maxIterationsPerCollateral: bigint = 10n,
+) {
+  if (!CENT_ADDRESSES) throw new Error("CENT addresses not configured");
+  const signer = await provider.getSigner();
+  const cr = new Contract(CENT_ADDRESSES.collateralRegistry!, CollateralRegistryAbi, signer);
+  const tx = await cr.redeemCollateral(centAmount, maxIterationsPerCollateral, maxFeePercentage);
   return tx.wait();
 }
 
