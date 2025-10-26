@@ -7,6 +7,7 @@ import { getEnvOptional as getEnv } from "../lib/runtime-env"
 import { useMarketData } from "../hooks/useMarketData"
 import useCentBalance from "../hooks/useCentBalance"
 import { useTransactionHistory } from "../hooks/useTransactionHistory"
+import { useETHBalance } from "../hooks/useETHBalance"
 import TransactionHistory from "../components/TransactionHistory"
 
 /**
@@ -23,6 +24,7 @@ export default function Portfolio() {
   const rpcUrl = getEnv("VITE_RPC_URL") || ""
   const { stats } = useMarketData(rpcUrl)
   const { balance: centBalance } = useCentBalance()
+  const { ethBalance, isLoading: ethLoading, symbol: ethSymbol } = useETHBalance()
 
   const [btcBalance, setBtcBalance] = useState<string>("0")
   const [usdcBalance, setUsdcBalance] = useState<string>("0")
@@ -98,13 +100,15 @@ export default function Portfolio() {
 
   // Calculate total portfolio value
   const btcPrice = stats?.btcPrice || 67500
+  const ethPrice = stats?.ethPrice || 3500 // Default ETH price
   const usdcPrice = stats?.usdcPrice || 1
   const centPrice = 1 // CENT is pegged to USD
 
   const btcValue = parseFloat(btcBalance) * btcPrice
+  const ethValue = parseFloat(ethBalance) * ethPrice
   const usdcValue = parseFloat(usdcBalance) * usdcPrice
   const centValue = centBalance ? (Number(centBalance) / 1e6) * centPrice : 0
-  const totalValue = btcValue + usdcValue + centValue
+  const totalValue = btcValue + ethValue + usdcValue + centValue
 
   // Not connected
   if (!isConnected) {
@@ -185,12 +189,12 @@ export default function Portfolio() {
         </h2>
 
         {/* BTC Card */}
-        <div className="cb-card" style={{ 
+        <div className="cb-card" style={{
           marginBottom: 'var(--cb-space-md)',
           cursor: 'pointer',
           transition: 'transform 0.2s ease',
         }}>
-          <div style={{ 
+          <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--cb-space-md)',
@@ -221,6 +225,48 @@ export default function Portfolio() {
               </div>
               <div className="cb-caption" style={{ color: 'var(--cb-green)' }}>
                 +2.5%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ETH Card */}
+        <div className="cb-card" style={{
+          marginBottom: 'var(--cb-space-md)',
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--cb-space-md)',
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #627EEA 0%, #8C9EFF 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+            }}>
+              Ξ
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="cb-body" style={{ fontWeight: 600, marginBottom: '2px' }}>
+                Ethereum
+              </div>
+              <div className="cb-caption">
+                {ethLoading ? 'Loading...' : `${ethBalance} ${ethSymbol}`}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="cb-body" style={{ fontWeight: 600, marginBottom: '2px' }}>
+                ${ethValue.toFixed(2)}
+              </div>
+              <div className="cb-caption" style={{ color: 'var(--cb-green)' }}>
+                +1.8%
               </div>
             </div>
           </div>
