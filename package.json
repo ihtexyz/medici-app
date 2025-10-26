@@ -31,6 +31,7 @@
     "@rainbow-me/rainbowkit": "2.2.8",
     "@reown/appkit": "^1.8.9",
     "@reown/appkit-adapter-wagmi": "^1.8.9",
+    "@sentry/react": "^10.22.0",
     "@swapkit/core": "^4.0.32",
     "@swapkit/helpers": "^4.1.0",
     "@swapkit/sdk": "^4.0.34",
