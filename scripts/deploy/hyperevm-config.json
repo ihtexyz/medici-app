@@ -1,0 +1,232 @@
+{
+  "network": {
+    "chainId": 999,
+    "name": "HyperEVM",
+    "rpcUrl": "https://rpc.hyperliquid.xyz/evm",
+    "explorer": "https://hyperevmscan.io",
+    "gasToken": "HYPE"
+  },
+  "deployment": {
+    "salt": "HyperEVM_2025",
+    "deployer": "REQUIRED - Set in .env as DEPLOYER",
+    "estimatedGasCost": "15 HYPE (~$150)",
+    "recommendedBuffer": "20 HYPE (~$200)"
+  },
+  "collaterals": [
+    {
+      "name": "HYPE",
+      "fullName": "Hyperliquid",
+      "symbol": "HYPE",
+      "decimals": 18,
+      "type": "native",
+      "address": "0x0000000000000000000000000000000000000000",
+      "isNative": true,
+      "parameters": {
+        "CCR": "1.50e18",
+        "MCR": "1.20e18",
+        "SCR": "1.10e18",
+        "BCR": "0.10e18",
+        "LIQUIDATION_PENALTY_SP": "0.05e18",
+        "LIQUIDATION_PENALTY_REDISTRIBUTION": "0.10e18"
+      },
+      "rationale": {
+        "MCR": "Higher MCR (120%) due to HYPE volatility",
+        "CCR": "150% provides safety margin for volatile native token",
+        "SCR": "110% emergency shutdown threshold"
+      },
+      "oracle": {
+        "type": "PriceFeedTestnet",
+        "testPrice": "10000000000000000000",
+        "testPriceUSD": "$10.00",
+        "production": "Chainlink or HyperCore precompile"
+      }
+    },
+    {
+      "name": "UBTC",
+      "fullName": "Universal Bitcoin",
+      "symbol": "UBTC",
+      "decimals": 8,
+      "type": "ERC20",
+      "address": "TO_BE_DETERMINED",
+      "isNative": false,
+      "parameters": {
+        "CCR": "1.50e18",
+        "MCR": "1.10e18",
+        "SCR": "1.05e18",
+        "BCR": "0.10e18",
+        "LIQUIDATION_PENALTY_SP": "0.05e18",
+        "LIQUIDATION_PENALTY_REDISTRIBUTION": "0.10e18"
+      },
+      "rationale": {
+        "MCR": "Standard BTC parameters (110%) - lower risk",
+        "CCR": "Consistent with other BTC wrapped tokens",
+        "SCR": "105% conservative shutdown"
+      },
+      "oracle": {
+        "type": "PriceFeedTestnet",
+        "testPrice": "100000000000000000000000",
+        "testPriceUSD": "$100,000.00",
+        "production": "Chainlink BTC/USD oracle"
+      },
+      "notes": [
+        "Verify UBTC contract exists on HyperEVM before deployment",
+        "Check decimals match (should be 8 for BTC)",
+        "Confirm it's a standard ERC20 implementation",
+        "Alternative: Deploy with HYPE only, add UBTC later"
+      ]
+    }
+  ],
+  "stablecoin": {
+    "name": "CENT",
+    "symbol": "CENT",
+    "implementationName": "BoldToken",
+    "decimals": 6,
+    "initialSupply": 0,
+    "minters": [
+      "CollateralRegistry",
+      "BorrowerOperations (per branch)",
+      "StabilityPool (per branch)"
+    ]
+  },
+  "governanceParameters": {
+    "interestRateMin": "0.00e18",
+    "interestRateMax": "0.10e18",
+    "minDebtAmount": "2000e6",
+    "gasCompensation": "200e6"
+  },
+  "deploymentSequence": [
+    {
+      "step": 1,
+      "contract": "BoldToken (CENT)",
+      "description": "Deploy main stablecoin contract",
+      "estimatedGas": "2M"
+    },
+    {
+      "step": 2,
+      "contract": "AddressesRegistry (per branch)",
+      "description": "Deploy registry for each collateral branch",
+      "estimatedGas": "1M per branch"
+    },
+    {
+      "step": 3,
+      "contract": "CollateralRegistry",
+      "description": "Deploy central registry for all branches",
+      "estimatedGas": "3M"
+    },
+    {
+      "step": 4,
+      "contract": "HintHelpers",
+      "description": "Deploy hint calculation helper",
+      "estimatedGas": "1M"
+    },
+    {
+      "step": 5,
+      "contract": "MultiTroveGetter",
+      "description": "Deploy batch data retrieval contract",
+      "estimatedGas": "1M"
+    },
+    {
+      "step": 6,
+      "contract": "Branch Contracts (per branch)",
+      "description": "Deploy 7 contracts per branch: BorrowerOperations, TroveManager, TroveNFT, StabilityPool, ActivePool, DefaultPool, GasPool, CollSurplusPool, SortedTroves",
+      "estimatedGas": "10M per branch"
+    },
+    {
+      "step": 7,
+      "contract": "PriceFeed (per branch)",
+      "description": "Deploy price oracle for each collateral",
+      "estimatedGas": "500K per branch"
+    }
+  ],
+  "postDeploymentSteps": [
+    {
+      "step": 1,
+      "action": "Set collateral registry on CENT token",
+      "method": "boldToken.setCollateralRegistry(address)"
+    },
+    {
+      "step": 2,
+      "action": "Set branch addresses on CENT token",
+      "method": "boldToken.setBranchAddresses(...) for each branch"
+    },
+    {
+      "step": 3,
+      "action": "Set test prices (testnet only)",
+      "method": "priceFeed.setPrice(...) for each oracle"
+    },
+    {
+      "step": 4,
+      "action": "Verify all contracts on block explorer",
+      "tool": "HyperScan or foundry verify"
+    },
+    {
+      "step": 5,
+      "action": "Update frontend configuration",
+      "files": [
+        "src/config/tokens-multichain.ts",
+        ".env",
+        "src/config/cent.ts (if used)"
+      ]
+    },
+    {
+      "step": 6,
+      "action": "Test basic operations",
+      "tests": [
+        "Open Trove with HYPE",
+        "Borrow CENT",
+        "Deposit to Stability Pool",
+        "Repay debt",
+        "Close Trove"
+      ]
+    }
+  ],
+  "verification": {
+    "contracts": [
+      "BoldToken",
+      "CollateralRegistry",
+      "HintHelpers",
+      "MultiTroveGetter",
+      "BorrowerOperations (per branch)",
+      "TroveManager (per branch)",
+      "StabilityPool (per branch)"
+    ],
+    "checks": [
+      "CENT total supply = 0",
+      "CollateralRegistry recognizes all branches",
+      "Price feeds return reasonable values",
+      "Borrower operations accept deposits",
+      "Frontend can read contract data"
+    ]
+  },
+  "emergencyContacts": {
+    "deployer": "Address with admin privileges",
+    "multisig": "Optional: Transfer ownership to multisig",
+    "pauseGuardian": "Optional: Can pause system in emergency"
+  },
+  "references": {
+    "felixProtocol": {
+      "url": "https://usefelix.xyz",
+      "relevance": "Liquity V2 fork on HyperEVM, same architecture",
+      "tvl": "$100M+",
+      "status": "Live and operational"
+    },
+    "hyperEVM": {
+      "docs": "https://hyperliquid.gitbook.io/hyperliquid-docs/hyperevm",
+      "explorer": "https://hyperevmscan.io",
+      "awesome": "https://github.com/HyperDevCommunity/AwesomeHyperEVM"
+    },
+    "liquityV2": {
+      "github": "https://github.com/liquity/bold",
+      "whitepaper": "https://liquity.gitbook.io/v2-whitepaper"
+    }
+  },
+  "notes": [
+    "This configuration matches Felix Protocol's successful deployment on HyperEVM",
+    "Parameters are conservative to ensure system stability",
+    "HYPE has higher MCR due to volatility",
+    "UBTC follows standard BTC wrapped token parameters",
+    "All contracts use CREATE2 for deterministic addresses",
+    "Deployment manifest will be generated automatically",
+    "Consider deploying HYPE branch first, then UBTC when ready"
+  ]
+}
