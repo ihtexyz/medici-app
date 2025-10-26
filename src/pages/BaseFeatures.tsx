@@ -207,31 +207,213 @@ export default function BaseFeatures() {
         </div>
       </section>
 
-      {/* Future Features Section */}
+      {/* Base Pay Section (Phase 5) */}
       <section style={{ marginBottom: 'var(--cb-space-2xl)' }}>
         <h2 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-md)' }}>
-          Coming Soon
+          Base Pay - USDC Payments
         </h2>
+        <p className="cb-caption" style={{
+          marginBottom: 'var(--cb-space-lg)',
+          color: 'var(--cb-text-secondary)',
+        }}>
+          Accept instant USDC payments with minimal friction using Base Account SDK
+        </p>
+
+        <div className="cb-card">
+          <div style={{ padding: 'var(--cb-space-md)' }}>
+            <div className="cb-caption" style={{
+              marginBottom: 'var(--cb-space-md)',
+              color: 'var(--cb-text-secondary)',
+            }}>
+              Base Pay Example
+            </div>
+
+            <div style={{
+              padding: 'var(--cb-space-md)',
+              background: 'var(--cb-gray-1)',
+              borderRadius: '8px',
+              marginBottom: 'var(--cb-space-md)',
+            }}>
+              <pre style={{
+                margin: 0,
+                fontSize: '12px',
+                color: 'var(--cb-text)',
+                overflow: 'auto',
+              }}>
+{`import { pay } from '@base-org/account'
+
+const payment = await pay({
+  amount: "10.00",  // USD amount
+  to: "0x...",      // Recipient
+  testnet: true     // Use testnet
+})`}
+              </pre>
+            </div>
+
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)' }}>
+              💡 Base Pay enables instant USDC payments with automatic currency conversion.
+              Users can pay with any token, and recipients receive USDC.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Base Account Section (Phase 4) */}
+      <section style={{ marginBottom: 'var(--cb-space-2xl)' }}>
+        <h2 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          Base Account - Smart Wallet
+        </h2>
+        <p className="cb-caption" style={{
+          marginBottom: 'var(--cb-space-lg)',
+          color: 'var(--cb-text-secondary)',
+        }}>
+          ERC-4337 smart wallets with passkey authentication and cross-chain functionality
+        </p>
+
         <div className="cb-card" style={{ marginBottom: 'var(--cb-space-md)' }}>
           <div style={{ padding: 'var(--cb-space-md)' }}>
-            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>🔄</div>
+            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>🔐</div>
             <div className="cb-body" style={{ fontWeight: 600, marginBottom: '4px' }}>
-              Swap Component
+              Passkey Authentication
             </div>
-            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)' }}>
-              Built-in token swapping powered by Uniswap and Base
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)', marginBottom: 'var(--cb-space-sm)' }}>
+              No seed phrases - users authenticate with Face ID, Touch ID, or security keys
+            </div>
+            <div className="cb-caption" style={{ fontSize: '11px', color: 'var(--cb-text-tertiary)' }}>
+              ✅ Universal sign-on across Base apps
+            </div>
+          </div>
+        </div>
+
+        <div className="cb-card" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          <div style={{ padding: 'var(--cb-space-md)' }}>
+            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>🌐</div>
+            <div className="cb-body" style={{ fontWeight: 600, marginBottom: '4px' }}>
+              Multi-Chain Support
+            </div>
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)', marginBottom: 'var(--cb-space-sm)' }}>
+              One account works across 9 EVM networks simultaneously
+            </div>
+            <div className="cb-caption" style={{ fontSize: '11px', color: 'var(--cb-text-tertiary)' }}>
+              ✅ Base, Ethereum, Optimism, Arbitrum, Polygon, and more
+            </div>
+          </div>
+        </div>
+
+        <div className="cb-card" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          <div style={{ padding: 'var(--cb-space-md)' }}>
+            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>⚡</div>
+            <div className="cb-body" style={{ fontWeight: 600, marginBottom: '4px' }}>
+              Gas-less Transactions
+            </div>
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)', marginBottom: 'var(--cb-space-sm)' }}>
+              Optional transaction sponsorship for seamless user experience
+            </div>
+            <div className="cb-caption" style={{ fontSize: '11px', color: 'var(--cb-text-tertiary)' }}>
+              ✅ Powered by ERC-4337 Account Abstraction
             </div>
           </div>
         </div>
 
         <div className="cb-card">
           <div style={{ padding: 'var(--cb-space-md)' }}>
-            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>💳</div>
+            <div style={{ fontSize: '32px', marginBottom: 'var(--cb-space-sm)' }}>🗄️</div>
             <div className="cb-body" style={{ fontWeight: 600, marginBottom: '4px' }}>
-              Fund Component (Onramp)
+              Data Vault
             </div>
-            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)' }}>
-              Buy crypto with fiat directly in your app via Coinbase
+            <div className="cb-caption" style={{ color: 'var(--cb-text-secondary)', marginBottom: 'var(--cb-space-sm)' }}>
+              Store and share contact details, shipping info across apps
+            </div>
+            <div className="cb-caption" style={{ fontSize: '11px', color: 'var(--cb-text-tertiary)' }}>
+              ✅ User controls what data is shared
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Implementation Guide Section */}
+      <section style={{ marginBottom: 'var(--cb-space-2xl)' }}>
+        <h2 className="cb-subtitle" style={{ marginBottom: 'var(--cb-space-md)' }}>
+          Integration Steps
+        </h2>
+
+        <div className="cb-card">
+          <div style={{ padding: 'var(--cb-space-md)' }}>
+            <div className="cb-caption" style={{
+              marginBottom: 'var(--cb-space-md)',
+              color: 'var(--cb-text-secondary)',
+            }}>
+              1. Install Base Account SDK
+            </div>
+
+            <div style={{
+              padding: 'var(--cb-space-md)',
+              background: 'var(--cb-gray-1)',
+              borderRadius: '8px',
+              marginBottom: 'var(--cb-space-lg)',
+            }}>
+              <pre style={{
+                margin: 0,
+                fontSize: '12px',
+                color: 'var(--cb-text)',
+              }}>
+{`npm install @base-org/account @base-org/account-ui`}
+              </pre>
+            </div>
+
+            <div className="cb-caption" style={{
+              marginBottom: 'var(--cb-space-md)',
+              color: 'var(--cb-text-secondary)',
+            }}>
+              2. Initialize Base Account SDK
+            </div>
+
+            <div style={{
+              padding: 'var(--cb-space-md)',
+              background: 'var(--cb-gray-1)',
+              borderRadius: '8px',
+              marginBottom: 'var(--cb-space-lg)',
+            }}>
+              <pre style={{
+                margin: 0,
+                fontSize: '12px',
+                color: 'var(--cb-text)',
+                overflow: 'auto',
+              }}>
+{`import { createBaseAccountSDK } from '@base-org/account'
+
+const baseAccount = createBaseAccountSDK({
+  // Configuration options
+})`}
+              </pre>
+            </div>
+
+            <div className="cb-caption" style={{
+              marginBottom: 'var(--cb-space-md)',
+              color: 'var(--cb-text-secondary)',
+            }}>
+              3. Add "Sign in with Base" Button
+            </div>
+
+            <div style={{
+              padding: 'var(--cb-space-md)',
+              background: 'var(--cb-gray-1)',
+              borderRadius: '8px',
+            }}>
+              <pre style={{
+                margin: 0,
+                fontSize: '12px',
+                color: 'var(--cb-text)',
+                overflow: 'auto',
+              }}>
+{`import { SignInButton } from '@base-org/account-ui'
+
+<SignInButton
+  onSuccess={(account) => {
+    console.log('Signed in:', account)
+  }}
+/>`}
+              </pre>
             </div>
           </div>
         </div>
