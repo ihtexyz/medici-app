@@ -1,3 +1,4 @@
+import { exportToCSV, exportToJSON } from "../lib/exportTransactions"
 import type { TransactionHistoryProps, Transaction } from "../types/transaction"
 
 /**
@@ -128,8 +129,35 @@ export default function TransactionHistory({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cb-space-sm)' }}>
-      {transactions.map((tx) => (
+    <div>
+      {/* Export buttons */}
+      {transactions.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: 'var(--cb-space-sm)',
+          marginBottom: 'var(--cb-space-md)',
+          justifyContent: 'flex-end'
+        }}>
+          <button
+            className="cb-button cb-button-outline"
+            onClick={() => exportToCSV(transactions)}
+            style={{ padding: 'var(--cb-space-xs) var(--cb-space-sm)', fontSize: '14px' }}
+          >
+            📊 Export CSV
+          </button>
+          <button
+            className="cb-button cb-button-outline"
+            onClick={() => exportToJSON(transactions)}
+            style={{ padding: 'var(--cb-space-xs) var(--cb-space-sm)', fontSize: '14px' }}
+          >
+            📄 Export JSON
+          </button>
+        </div>
+      )}
+
+      {/* Transaction list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cb-space-sm)' }}>
+        {transactions.map((tx) => (
         <div
           key={tx.id}
           className="cb-card"
@@ -215,6 +243,7 @@ export default function TransactionHistory({
           </div>
         </div>
       ))}
+      </div>
     </div>
   )
 }

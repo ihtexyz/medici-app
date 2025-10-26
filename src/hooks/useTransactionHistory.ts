@@ -70,7 +70,7 @@ export function useTransactionHistory(walletAddress?: string) {
       metadata,
     }
 
-    setTransactions(prev => [transaction, ...prev])
+    setTransactions(prev => [transaction, ...prev].slice(0, MAX_TRANSACTIONS))
     return transaction.id
   }, [])
 
@@ -104,7 +104,7 @@ export function useTransactionHistory(walletAddress?: string) {
   const clearHistory = useCallback(() => {
     setTransactions([])
     if (walletAddress) {
-      localStorage.removeItem(`${STORAGE_KEY}_${walletAddress}`)
+      localStorage.setItem(`${STORAGE_KEY}_${walletAddress}`, '[]')
     }
   }, [walletAddress])
 

@@ -115,12 +115,12 @@ describe('TransactionHistory', () => {
   describe('Transaction Icons', () => {
     const iconTests = [
       { type: 'borrow' as const, icon: '💳' },
-      { type: 'repay' as const, icon: '💵' },
+      { type: 'repay' as const, icon: '💰' },
       { type: 'deposit' as const, icon: '📥' },
       { type: 'withdraw' as const, icon: '📤' },
       { type: 'swap' as const, icon: '🔄' },
-      { type: 'on_ramp' as const, icon: '🏦' },
-      { type: 'off_ramp' as const, icon: '💰' },
+      { type: 'on_ramp' as const, icon: '⬇️' },
+      { type: 'off_ramp' as const, icon: '⬆️' },
       { type: 'claim' as const, icon: '🎁' },
     ]
 

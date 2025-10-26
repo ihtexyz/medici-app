@@ -69,9 +69,20 @@ export default function Portfolio() {
         const totalBtc = balances.reduce((sum, b) => sum + b.balance, 0n)
         setBtcBalance((Number(totalBtc) / 1e18).toFixed(6))
 
-        // For USDC, we'd need the USDC contract address
-        // For now, keeping as placeholder since we don't have USDC in config
-        setUsdcBalance("0.00")
+        // Fetch USDC balance (Arbitrum USDC: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831)
+        try {
+          const usdcContract = new ethers.Contract(
+            "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            ["function balanceOf(address) view returns (uint256)"],
+            provider
+          )
+          const usdcBal = await usdcContract.balanceOf(address)
+          // USDC has 6 decimals
+          setUsdcBalance((Number(usdcBal) / 1e6).toFixed(2))
+        } catch (error) {
+          console.error("Error fetching USDC balance:", error)
+          setUsdcBalance("0.00")
+        }
       } catch (error) {
         console.error("Error fetching balances:", error)
         // Fallback to 0 on error
