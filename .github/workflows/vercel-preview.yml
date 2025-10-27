@@ -1,51 +1,137 @@
-name: Vercel Preview
+name: Vercel Staging Deployment
 
 on:
+  push:
+    branches: [main, staging, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, staging]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  deploy-preview:
+  # ============================================
+  # DEPLOY STAGING - Preview deployments
+  # ============================================
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.deployment_url }}
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: ./dapp
+        run: npm ci --legacy-peer-deps
 
-      - name: Build
-        run: pnpm build
-        working-directory: ./dapp
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
         env:
+          # Build-time environment variables
           VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
-          VITE_CENT_ADDRESS: ${{ secrets.VITE_CENT_ADDRESS }}
-          VITE_CENT_REWARD_ADDRESS: ${{ secrets.VITE_CENT_REWARD_ADDRESS }}
-          VITE_MARKET_ID: btc-aggregated
-          VITE_SWAPKIT_API_KEY: preview
-          VITE_SWAPKIT_PROJECT_ID: preview
-          VITE_APP_NAME: Origami
-          VITE_WALLETCONNECT_PROJECT_ID: preview
+          VITE_BASE_SEPOLIA_RPC: https://sepolia.base.org
+          VITE_ARBITRUM_SEPOLIA_RPC: https://sepolia-rollup.arbitrum.io/rpc
+          VITE_ETH_SEPOLIA_RPC: https://ethereum-sepolia.publicnode.com
+          VITE_REOWN_PROJECT_ID: ${{ secrets.VITE_REOWN_PROJECT_ID }}
+          VITE_ONCHAINKIT_API_KEY: ${{ secrets.VITE_ONCHAINKIT_API_KEY }}
+          VITE_ENABLE_SWAPS: 'true'
+          VITE_APP_VERSION: ${{ github.sha }}
 
-      - name: Deploy to Vercel Preview
-        uses: amondnet/vercel-action@v25
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "✅ Deployed to: $DEPLOYMENT_URL"
+
+      - name: Comment deployment URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./dapp
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Staging Deployment\n\n✅ Successfully deployed to staging!\n\n**Preview URL:** ${{ steps.deploy.outputs.deployment_url }}\n\n**Commit:** ${context.sha.slice(0, 7)}\n**Branch:** ${context.ref.split('/').pop()}`
+            })
+
+  # ============================================
+  # DEPLOY PRODUCTION - Production deployments
+  # ============================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: []  # Will depend on tests passing in ci.yml
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://medici.vercel.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          # Production environment variables
+          VITE_RPC_URL: ${{ secrets.VITE_RPC_URL_PROD }}
+          VITE_BASE_SEPOLIA_RPC: https://sepolia.base.org
+          VITE_ARBITRUM_SEPOLIA_RPC: https://sepolia-rollup.arbitrum.io/rpc
+          VITE_ETH_SEPOLIA_RPC: https://ethereum-sepolia.publicnode.com
+          VITE_REOWN_PROJECT_ID: ${{ secrets.VITE_REOWN_PROJECT_ID }}
+          VITE_ONCHAINKIT_API_KEY: ${{ secrets.VITE_ONCHAINKIT_API_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_ENABLE_ANALYTICS: 'true'
+          VITE_ENABLE_SENTRY: 'true'
+          VITE_ENABLE_SWAPS: 'true'
+          VITE_APP_VERSION: ${{ github.sha }}
+
+      - name: Deploy to Vercel production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to production" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 URL: https://medici.vercel.app" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "👤 Actor: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ Time: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
 
 
